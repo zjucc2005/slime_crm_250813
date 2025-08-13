@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>HCI CONSULTING</title>
+        <%= favicon_link_tag asset_pack_path('media/images/logo-hci.ico') %>
+        <%= csrf_meta_tags %>
+        <%= csp_meta_tag %>
+
+        <!-- Tailwind CSS -->
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+        
+        <%= stylesheet_pack_tag 'application', media: 'all', 'data-turbolinks-track': 'reload' %>
+        <%= javascript_pack_tag 'application', 'data-turbolinks-track': 'reload' %>
+        <%= stylesheet_link_tag :application %>
+        <%= javascript_include_tag 'application', 'data-turbolinks-track': 'reload' %>
+        
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    </head>
+
+    <body>
+        <% if signed_in? %>
+            <%= render :partial => 'shared/main_navbar' %>
+            <div class="container-fluid main">
+                <%= display_flash_message %>
+                <%= yield %>
+                <div class="footer">
+                    <span class="text-smaller" style="color: #EFEFEF;">Developed by chang.cai</span>
+                </div>
+            </div>
+        <% else %>
+            <%= display_flash_message %>
+            <%= yield %>
+        <% end %>
+    </body>
+</html>

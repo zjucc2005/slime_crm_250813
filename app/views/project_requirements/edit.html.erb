@@ -1,0 +1,49 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('tasks') %> <%= t('action.edit_model', :model => mt(:project_requirement)) %></h5>
+        <%= link_to fa_icon_tag('close'), return_to(project_requirements_path), :class => 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <%= form_for @project_requirement, :multipart => true do |f| %>
+            <%= model_error_tag(@project_requirement) %>
+
+            <div class="row">
+                <div class="col-12 form-group">
+                    <span class="badge badge-light"><%= show_creator(@project_requirement) %></span>
+                    <span class="badge badge-light"><%= show_timestamps(@project_requirement) %></span>
+                </div>
+                <div class="col-12 form-group">
+                    <%= f.label :title %><span class="text-red">*</span>
+                    <%= f.text_field :title, required: true, class: 'form-control' %>
+                </div>
+                <div class="col-12 form-group">
+                    <%= f.label :content%><span class="text-red">*</span>
+                    <%= f.text_area :content, :required => true, :rows => 5, :class => 'form-control' %>
+                </div>
+                <div class="col-12 form-group">
+                    <%= f.label :category, '需求类型' %><span class="text-red">*</span>
+                    <%= f.select :category, ProjectRequirement::CATEGORIES, { prompt: default_prompt}, required: true, class: 'form-control select2' %>
+                </div>
+                <div class="col-12 form-group">
+                    <%= f.label :demand_number %><span class="text-red">*</span>
+                    <%= f.number_field :demand_number, min: 1, required: true, class: 'form-control' %>
+                </div>
+                <% [:file, :file1, :file2].each do |attr| %>
+                    <div class="col-12 form-group">
+                        <%= f.label attr %>
+                        <%= link_to @project_requirement.send(attr).url do %>
+                            <i class="fa fa-download"></i>
+                        <% end if @project_requirement.send(attr).present? %>
+                        <%= f.file_field attr, class: 'form-control-file' %>
+                    </div>
+                <% end %>
+            </div>
+
+            <div class="form-group mb-0">
+                <%= submit_tag t('action.submit'), :class => 'btn btn-submit' %>
+                <%= link_to t('action.back'), return_to(project_requirements_path), :class => 'btn btn-back' %>
+            </div>
+        <% end %>
+    </div>
+</div>

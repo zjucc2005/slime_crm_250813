@@ -1,0 +1,7 @@
+<%= form_for @call_record, url: remote_create_call_records_path(project_id: @project.id), remote: true do |f| %>
+    <%= render partial: 'call_records/loading_modal/form', locals: { f: f } %>
+
+    <div class="form-group mb-0">
+        <%= f.submit t('action.submit'), class: 'btn btn-submit' %>
+    </div>
+<% end %>

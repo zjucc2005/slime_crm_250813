@@ -1,0 +1,98 @@
+<div class="card p-2 mb-1 d-flex flex-row justify-content-between">
+    <div>
+        <%= link_to new_project_requirement_path, :class => 'btn btn-primary' do %>
+            <%= fa_icon_tag('plus') %> <%= "#{t('action.new_model', :model => mt(:project_requirement))}" %>
+        <% end if can? :new, ProjectRequirement %>
+    </div>
+    <%= render :partial => 'project_requirements/widgets/search_modal' %>
+</div>
+
+<% if @project_requirements.present? %>
+    <div class="card p-2 mb-2">
+        <table class="table table-sm table-striped nowrap card-text">
+            <thead>
+            <tr>
+                <th><%= check_box_tag :selectAll, nil, nil, :onclick => 'selectAll(this);' %></th>
+                <th><%= mt(:project_requirement, :id) %></th>
+                <th><%= mt(:project, :name) %></th>
+                <th><%= t(:project_id) %></th>
+                <th><%= mt(:project_requirement, :title) %> / <%= mt(:project_requirement, :content) %></th>
+                <th><%= mt(:project_requirement, :demand_number) %></th>
+                <th><%= t(:file)%> <i class="fa fa-download"></i></th>
+                <th><%= mt(:project_requirement, :status) %></th>
+                <th><%= mt(:project_requirement, :operator) %></th>
+                <th><%= mt(:project, :created_at) %></th>
+                <th><%= mt(:project, :updated_at) %></th>
+                <th class="action"><%= t(:operation) %></th>
+            </tr>
+            </thead>
+            <tbody>
+            <% @project_requirements.each do |instance| %>
+                <tr>
+                    <td><%= check_box_tag :'uids[]', instance.id, false %></td>
+                    <td><%= content_tag :span, "# #{instance.uid}", :class => 'text-gray' %></td>
+                    <td title="<%= instance.project.name %>"><%= link_to truncate(instance.project.name, length: 30), project_path(instance.project_id) %></td>
+                    <td><%= instance.project.uid %></td>
+                    <td>
+                        <a data-toggle="popover" data-trigger="hover" data-placement="right" title="# <%= instance.uid %>" data-html="true" data-content="<%= instance.content.gsub("\n", '<br>') %>">
+                            <%= truncate(instance.title, length: 45) %>
+                        </a>
+                    </td>
+                    <td><%= instance.demand_number %></td>
+                    <td>
+                        <div class="dropdown">
+                            <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                                <%= t(:file) %>
+                                <%= count_badge(instance.files.length) %>
+                            </button>
+                            <div class="dropdown-menu">
+                                <% instance.files.each do |file| %>
+                                    <%= link_to file.identifier, file.url, target: '_blank', class: 'dropdown-item text-smaller' %>
+                                <% end %>
+                            </div>
+                        </div>
+                    </td>
+                    <td><%= project_requirement_status_badge(instance.status) %></td>
+                    <td><%= instance.operator.name_cn rescue nil %></td>
+                    <td><%= instance.created_at.strftime('%F %T') %></td>
+                    <td><%= instance.updated_at.strftime('%F %T') %></td>
+                    <td class="action">
+                        <div class="dropdown dropleft">
+                            <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                                <%= fa_icon_tag('cog') %> <%= t(:operation) %>
+                            </button>
+                            <div class="dropdown-menu">
+                                <%= link_to project_requirement_path(instance), :class => 'dropdown-item text-smaller' do %>
+                                    <i class="fa fa-tasks"></i> <%= t('action.detail') %>
+                                <% end if can?(:show, ProjectRequirement) %>
+                                <%= link_to edit_project_requirement_path(instance), :class => 'dropdown-item text-smaller' do %>
+                                    <i class="fa fa-edit"></i> <%= t('action.edit') %>
+                                <% end if can?(:edit, ProjectRequirement) && instance.can_edit? %>
+                                <%= link_to edit_operator_project_requirement_path(instance), :class => 'dropdown-item text-smaller' do %>
+                                    <i class="fa fa-exchange"></i> <%= t(:change_operator) %>
+                                <% end if can?(:edit_operator, ProjectRequirement) && instance.can_edit? %>
+                                <%= link_to finish_project_requirement_path(instance), :method => :put, :class => 'dropdown-item text-smaller',
+                                            :data => { :confirm => t(:sure) } do %>
+                                    <i class="fa fa-circle-o text-success"></i> <%= t('action.finish') %>
+                                <% end if can?(:finish, ProjectRequirement) && instance.can_edit? %>
+                                <%= link_to cancel_project_requirement_path(instance), :method => :put, :class => 'dropdown-item text-smaller',
+                                            :data => { :confirm => t(:sure) } do %>
+                                    <i class="fa fa-times text-danger"></i> <%= t('action.cancel') %>
+                                <% end if can?(:cancel, ProjectRequirement) && instance.can_edit? %>
+
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            <% end %>
+            </tbody>
+        </table>
+    </div>
+    <%= will_paginate @project_requirements %>
+<% else %>
+    <div class="card p-2">
+        <div class="p-4 text-center">
+            <h5 class="text-gray mb-0"><%= t(:not_found) %></h5>
+        </div>
+    </div>
+<% end %>

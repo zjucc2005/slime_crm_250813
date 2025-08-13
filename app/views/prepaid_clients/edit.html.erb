@@ -1,0 +1,8 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('edit') %> <%= t('action.edit_model', :model => t('activerecord.models.prepaid_client')) %></h5>
+        <%= link_to fa_icon_tag('close'), prepaid_clients_path, :class => 'card-header-close' %>
+    </div>
+
+    <%= render 'form' %>
+</div>

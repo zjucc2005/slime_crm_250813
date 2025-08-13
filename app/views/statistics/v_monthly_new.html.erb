@@ -1,0 +1,105 @@
+<ul class="nav nav-tabs">
+    <li class="nav-item">
+        <a class="nav-link active">
+            <i class="fa fa-line-chart"></i> 每月新增统计
+        </a>
+    </li>
+</ul>
+<div id="app" class="card p-2 mb-2">
+    <el-row :gutter="10" class="mb-2">
+        <el-col :lg="6" :md="12">
+            <label class="text-smaller">统计年份</label>
+            <el-date-picker
+                v-model="search_form.datetime"
+                @change="load_chart_data"
+                type="year"
+                size="small"
+                value-format="yyyy-MM-dd"
+                placeholder="选择年份"
+                style="width: 100%;"
+            />
+        </el-col>
+        <el-col :lg="6" :md="12">
+            <el-button @click="load_chart_data" size="small" plain style="margin-top: 1.9rem;">
+                <i class="el-icon-refresh-right"></i> 刷新
+            </el-button>
+        </el-col>
+    </el-row>
+    <div ref="line_chart" style="height: 480px;"></div>
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            search_form: {
+                datetime: '<%= params[:datetime] || Time.now.beginning_of_year.strftime('%F') %>'
+            },
+            res_data: {},
+            line_chart: null, // ref
+            line_chart_data: {}
+        },
+        mounted: function(){
+            this.$nextTick(function(){
+                this.load_chart_data()
+            })
+        },
+        methods: {
+            load_chart_data () {
+                let loading = this.$loading()
+                let _this_ = this;
+                $.get('/statistics/v_monthly_new', this.search_form, function (res) {
+                    loading.close()
+                    _this_.res_data = res.data
+                    let _data_ = res.data
+                    if (_data_.length === 0) {
+                        _data_ = [{ name: '无数据', income: 0, profit: 0 }]
+                    }
+                    _this_.set_line_chart(_data_)
+                })
+            },
+            set_line_chart (data) {
+                let line_chart = this.$echarts.init(this.$refs.line_chart, 'default');
+                let line_option = {
+                    title: {
+                        text: '每月新增',
+                        subtext: 'Monthly addition',
+                        left: 'left'
+                    },
+                    legend: {},
+                    xAxis: {
+                        type: 'category',
+                        data: data.map(e => e.name)
+                    },
+                    yAxis: {
+                        type: 'value'
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: {
+                            type: 'shadow'
+                        }
+                    },
+                    series: [
+                        {
+                            name: '新增专家',
+                            data: data.map(e => e.new_expert),
+                            type: 'line'
+                        },
+                        {
+                            name: '新增任务',
+                            data: data.map(e => e.new_task),
+                            type: 'line'
+                        },
+                        {
+                            name: '新增任务收费小时',
+                            data: data.map(e => e.new_task_duration),
+                            type: 'line'
+                        }
+                    ]
+                };
+                line_chart.setOption(line_option);
+            }
+        }
+    });
+</script>

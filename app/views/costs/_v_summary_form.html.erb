@@ -1,0 +1,186 @@
+<div id="app" class="mb-2">
+    <el-row class="mb-2" :gutter="10">
+        <el-col :lg="4" :md="8">
+            <el-date-picker
+                v-model="cost_summary.datetime"
+                type="month"
+                size="small"
+                value-format="yyyy-MM-dd"
+                placeholder="选择月份"
+                style="width: 100%;"
+            />
+        </el-col>
+        <el-col :lg="4" :md="8">
+            <span class="text-bold pull-right">总计: {{ sum_price() }}</span>
+        </el-col>
+    </el-row>
+    <el-row class="mb-2">
+        <el-col :lg="8" :md="16">
+            <el-tree
+                :data="cost_types"
+                node-key="id"
+                :props="{ label: 'name' }"
+                default-expand-all
+                :expand-on-click-node="false"
+                style="width: 100%;"
+                >
+                <span class="c-tree-node" slot-scope="{ node, data }">
+                    <template v-if="data.is_parent">
+                        <span class="text-bold">
+                            {{ node.label }}
+                        </span>
+                        <span class="text-bold">
+                            {{ sum_price(data.id) }}
+                            <i class="el-icon-pie-chart"></i>
+                            {{ sum_price_rate(data.id) }}
+                        </span>
+                    </template>
+                    <template v-else>
+                        <span>
+                            {{ node.label }}
+                        </span>
+                        <span>
+                            <el-input v-if="!data.is_parent" size="mini" type="number"
+                                placeholder="输入金额"
+                                v-model="cost_summary.costs[data.id]"
+                                clearable>
+                            </el-input>
+                            <span v-else>
+                                {{ sum_price(data.id) }}
+                                <i class="el-icon-pie-chart"></i>
+                                {{ sum_price_rate(data.id) }}
+                            </span>
+                        </span>
+                    </template>
+                </span>
+            </el-tree>
+        </el-col>
+    </el-row>
+    <el-button type="primary" size="small" @click="submit">提交</el-button>
+    <el-link href="/costs" :underline="false">
+        <el-button type="info" size="small">返回</el-button>
+    </el-link>
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            mode: '',  // new/edit
+            cost_types: [],
+            cost_summary: {
+                id: '<%= cost_summary_id %>',
+                datetime: '',
+                costs: {}
+            }
+        },
+        mounted: function(){
+            this.$nextTick(function(){
+                let _this_ = this;
+                $.get('/costs/v_load_types', function(res) {
+                    if (res.status === 0) {
+                        _this_.cost_types = res.data.cost_types;  // 加载类型数据
+                        console.log('load cost types:ok', res.data.cost_types)
+                    } else if (res.status === 1) {
+                        _this_.$message({ message: res.msg, type: 'error' })
+                    }
+                })
+                if (this.cost_summary.id) {
+                    this.mode = 'edit'
+                    $.get(`/costs/v_summary_show?cost_summary_id=${this.cost_summary.id}`, function(res) {
+                        if (res.status === 0) {
+                            _this_.set_cost_summary(res.data.cost_summary)
+                            console.log(`load cost summary(${_this_.cost_summary.id}):ok`, res)
+                        } else if (res.status === 1) {
+                            _this_.$message({ message: res.msg, type: 'error' })
+                        }
+                    })
+                } else {
+                    this.mode = 'new'
+                }
+            })
+        },
+        computed: {
+            sum_price() {
+                return (cost_type_id) => {
+                    let sum = 0
+                    if (cost_type_id) {
+                        let cost_type = this.cost_types.find(t => t.id === cost_type_id)
+                        cost_type.children.map(c => {
+                            sum += (this.cost_summary.costs[c.id] || 0) * 1
+                        })
+                    } else {
+                        Object.keys(this.cost_summary.costs).map(k => {
+                            sum += (this.cost_summary.costs[k] || 0) * 1
+                        })
+                    }
+                    return sum
+                }
+            },
+            sum_price_rate() {
+                return (cost_type_id) => {
+                    let rate = (this.sum_price(cost_type_id) / this.sum_price()) || 0
+                    return `${(rate * 100).toFixed(1)} %`
+                }
+            }
+        },
+        methods: {
+            submit() {
+                let _this_ = this
+                if (!this.cost_summary.datetime) { 
+                    this.$message({ message: '请选择月份', type: 'warning' });
+                    return
+                }
+                let params = { costs: [] }
+                params.datetime = this.cost_summary.datetime
+                params.costs = Object.keys(this.cost_summary.costs).map(k => {
+                    return { cost_type_id: k * 1, price: this.cost_summary.costs[k] * 1 }
+                })
+                if(this.cost_summary.id) {
+                    params.cost_summary_id = this.cost_summary.id
+                    $.post('/costs/v_summary_update', params, function(res) {
+                        console.log('v_summary_update res:', res)
+                        if (res.status === 0) {
+                            _this_.set_cost_summary(res.data.cost_summary)
+                            _this_.$message({ message: '提交成功', type: 'success' })
+                        } else if (res.status === 1) {
+                            _this_.$message({ message: res.msg, type: 'error' })
+                        }
+                    })
+                } else {
+                    $.post('/costs/v_summary_create', params, function(res) {
+                        console.log('v_summary_create res:', res)
+                        if (res.status === 0) {
+                            _this_.set_cost_summary(res.data.cost_summary)
+                            _this_.$message({ message: '提交成功', type: 'success' })
+                        } else if (res.status === 1) {
+                            _this_.$message({ message: res.msg, type: 'error' })
+                        }
+                    })
+                }
+            },
+            set_cost_summary(data) {
+                this.cost_summary.datetime = data.datetime
+                let _costs_ = {}
+                data.costs.forEach(item => {
+                    _costs_[item.cost_type_id] = item.price
+                })
+                this.cost_summary.costs = _costs_
+            }
+        }
+    })
+</script>
+
+<style>
+  .c-tree-node {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    padding-right: 8px;
+  }
+  .el-tree-node__content {
+    height: 30px;
+  }
+</style>

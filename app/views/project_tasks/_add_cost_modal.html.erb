@@ -1,0 +1,243 @@
+<div id="addCostModal" class="modal fade">
+    <div class="modal-dialog" style="max-width: 960px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"><%= t('action.add_model', :model => t(:payment_info)) %></h4>
+                <button type="button" data-dismiss="modal" class="close">&times;</button>
+            </div>
+
+            <%= hidden_field_tag :expert_cpt, project_task.expert.cpt %>
+            <%= hidden_field_tag :expert_cpt_taxed, project_task.expert.cpt_taxed %>
+            <%= hidden_field_tag :expert_tax_free_limit, project_task.expert.expert_tax_free_limit %>
+            <%= form_tag add_cost_project_task_path(project_task), :method => :post, :remote => true do %>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-lg-3 col-6 form-group">
+                            <%= label_tag :category, mt(:project_task_cost, :category) %><span class="text-red">*</span>
+                            <%= select_tag :category, options_for_select(project_task_cost_category_options(project_task)),
+                                           :prompt => default_prompt, :required => true, :class => 'form-control select2' %>
+                        </div>
+                        <div class="col-lg-9 col-12 form-group">
+                            <%= label_tag :template_expert, t(:select_payment_info) %>
+                            <%= select_tag :template_expert, options_for_select(project_task_cost_template_expert_options(project_task)),
+                                           :prompt => t('action.new_model', :model => mt(:candidate_payment_info)), :class => 'form-control select2' %>
+                        </div>
+                        <div class="col-lg-9 col-12 form-group">
+                            <%= label_tag :template_recommend, t(:select_payment_info) %>  <span class="text-gray"><%= "##{project_task.expert.recommender.uid_name}" rescue nil %></span>
+                            <%= select_tag :template_recommend, options_for_select(project_task_cost_template_recommend_options(project_task)),
+                                           :prompt => t('action.new_model', :model => mt(:candidate_payment_info)), :class => 'form-control select2' %>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-lg-3 col-6 form-group">
+                            <%= label_tag :price, mt(:project_task_cost, :price) %>
+                            <span id="price_label" class="text-smaller"></span>
+                            <span class="text-red">*</span>
+                            <%= number_field_tag :price, nil, min: 0, step: 0.01, required: true, class: 'form-control' %>
+                            <%= content_tag :span, '', id: 'price_tips', class: 'phone-location' %>
+                        </div>
+                        <div class="col-lg-3 col-6 form-group">
+                            <%= label_tag :gongsizhichu, mt(:project_task_cost, :gongsizhichu) %><span class="text-smaller">(=专家到账金额+税费)</span>
+                            <%= text_field_tag :gongsizhichu, nil, class: 'form-control' %>
+                        </div>
+                        <div class="col-lg-3 col-6 form-group">
+                            <%= label_tag :tax, mt(:project_task_cost, :tax) %>
+                            <%= text_field_tag :tax, nil, readonly: true, class: 'form-control' %>
+                            <%= content_tag :span, project_task.expert.expert_tax_free_limit, id: 'tax_free_tips', class: 'phone-location' %>
+                        </div>
+                        <div class="col-lg-3 col-6 form-group">
+                            <%= label_tag :currency, mt(:project_task_cost, :currency) %><span class="text-red">*</span>
+                            <%= select_tag :currency, options_for_select(currency_options), :required => true, :class => 'form-control select2' %>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-3 col-6 form-group">
+                            <%= label_tag :payment_info_category, mt(:project_task_cost, :payment_way) %><span class="text-red">*</span>
+                            <%= select_tag :'payment_info[category]', options_for_select(CandidatePaymentInfo::CATEGORY.to_a.map(&:reverse)),
+                                           :prompt => default_prompt, :required => true, :class => 'form-control select2' %>
+                        </div>
+                        <div class="col-lg-3 col-6 form-group">
+                            <%= label_tag :advance_payment, t(:advance_payment) %>
+                            <%= select_tag :advance_payment, options_for_select(boolean_options, false), :class => 'form-control select2' %>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-3 col-6 form-group">
+                            <%= label_tag :payment_info_bank, mt(:candidate_payment_info, :bank) %><span class="text-red">*</span>
+                            <%= select_tag :'payment_info[bank]', options_for_select(bank_options), :prompt => default_prompt,
+                                           :required => true, :class => 'form-control select2' %>
+                        </div>
+                        <div class="col-lg-3 col-6 form-group">
+                            <%= label_tag :payment_info_sub_branch, mt(:candidate_payment_info, :sub_branch) %><span class="text-red">*</span>
+                            <%= text_field_tag :'payment_info[sub_branch]', nil, :class => 'form-control' %>
+                        </div>
+                        <div class="col-lg-3 col-6 form-group">
+                            <%= label_tag :payment_info_account, mt(:candidate_payment_info, :account) %><span class="text-red">*</span>
+                            <%= text_field_tag :'payment_info[account]', nil, :required => true, :class => 'form-control' %>
+                        </div>
+                        <div class="col-lg-3 col-6 form-group">
+                            <%= label_tag :payment_info_username, mt(:candidate_payment_info, :username) %><span class="text-red">*</span>
+                            <%= text_field_tag :'payment_info[username]', nil, :required => true, :class => 'form-control' %>
+                        </div>
+                        <div class="col-lg-6 col-12 form-group">
+                            <%= label_tag :payment_info_id_number, mt(:candidate_payment_info, :id_number) %>
+                            <%= text_field_tag :'payment_info[id_number]', nil, :class => 'form-control' %>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 form-group">
+                            <%= label_tag :memo, mt(:project_task_cost, :memo) %>
+                            <%= text_field_tag :memo, nil, :class => 'form-control' %>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-3 col-6 form-group">
+                            <%= label_tag :lijin, mt(:project_task_cost, :lijin) %>
+                            <%= number_field_tag :lijin, nil, :min => 0, :step => 0.01, :class => 'form-control' %>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" data-dismiss="modal" class="btn btn-back"><%= t('action.close') %></button>
+                    <%= submit_tag t('action.submit'), :class => 'btn btn-submit' %>
+                </div>
+            <% end %>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function(){
+        refresh_template();
+        refresh_payment_info_category();
+        refresh_cost_form();
+    });
+    $('#category').change(function(){ refresh_template(); });  // 费用类型change事件
+    $('#template_expert').change(function(){ refresh_payment_info_category(); });  // 专家支付信息模板change事件
+    $('#template_recommend').change(function(){ refresh_payment_info_category(); });  // 推荐专家支付信息模板change事件
+    $('#payment_info_category').change(function(){ refresh_cost_form(); }); // 支付类型change事件
+    // (0, k], y = x
+    // (k, +∞), y = 1.25x - 0.25k
+    $('#price').change(function() {
+        if ($('#category').val() === 'expert') {
+            let x = this.value * 1;
+            let k = $('#expert_tax_free_limit').val() * 1;
+            if (x <= k) {
+                $('#tax').val(0);
+                $('#gongsizhichu').val(x);
+            } else {
+                $('#tax').val((0.2 * x - 0.2 * k).toFixed(1));
+                $('#gongsizhichu').val((1.2 * x - 0.2 * k).toFixed(1));
+            }
+        }
+    });
+    // (0, k], x = y
+    // (k, +∞), x = (5y + k) / 6
+    $('#gongsizhichu').change(function() {
+        if ($('#category').val() === 'expert') {
+            let y = this.value * 1;
+            let k = $('#expert_tax_free_limit').val() * 1;
+            if (y <= k) {
+                $('#tax').val(0);
+                $('#price').val(y);
+            } else {
+                $('#tax').val(((y - k) /6).toFixed(1));
+                $('#price').val(((5 * y + k) / 6).toFixed(1));
+            }
+        }
+    })
+
+    // 1.费用类型触发, project_task_cost.category
+    function refresh_template(){
+        let category = $('#category');
+        let template_expert = $('#template_expert');
+        let template_recommend = $('#template_recommend');
+        let advance_payment = $('#advance_payment');
+        let lijin = $('#lijin');
+        let gongsizhichu = $('#gongsizhichu');
+        let tax = $('#tax');
+        template_expert.parent().hide();
+        template_expert.val('').change();
+        template_recommend.parent().hide();
+        template_recommend.val('').change();
+        advance_payment.parent().hide();
+        lijin.parent().hide();
+        lijin.val('');
+        gongsizhichu.parent().hide();
+        gongsizhichu.val('');
+        tax.parent().hide();
+        tax.val('');
+        $('#price_label').html('');
+
+        if(category.val() === 'expert'){
+            template_expert.parent().show();
+            advance_payment.parent().show();
+            lijin.parent().show();
+            gongsizhichu.parent().show();
+            tax.parent().show();
+            $('#price_label').html('(专家到账金额)');
+        }else if(category.val() === 'recommend'){
+            template_recommend.parent().show();
+        }
+        refresh_price_tips();
+    }
+    // 2.支付信息模板触发, template of payment_info
+    function refresh_payment_info_category(){
+        let category = document.getElementById('category');
+        let template_expert = document.getElementById('template_expert');
+        let template_recommend = document.getElementById('template_recommend');
+        if(category.value === 'expert' && template_expert.value ){
+            $('#payment_info_category').val('').change();
+            form_deactivate('payment_info_category');
+        }else if(category.value === 'recommend' && template_recommend.value){
+            $('#payment_info_category').val('').change();
+            form_deactivate('payment_info_category');
+        } else{
+            form_activate('payment_info_category');
+        }
+
+    }
+
+    // 3.支付类型触发, payment_info.category
+    function refresh_cost_form(){
+        let payment_info_category = document.getElementById('payment_info_category');
+        if(payment_info_category.value === 'alipay'){
+            form_deactivate('payment_info_bank');
+            form_deactivate('payment_info_sub_branch');
+            form_activate('payment_info_account');
+            form_activate('payment_info_username');
+            form_show('payment_info_id_number');
+        }else if(payment_info_category.value === 'unionpay'){
+            form_activate('payment_info_bank');
+            form_activate('payment_info_sub_branch');
+            form_activate('payment_info_account');
+            form_activate('payment_info_username');
+            form_show('payment_info_id_number');
+        }else{
+            form_deactivate('payment_info_bank');
+            form_deactivate('payment_info_sub_branch');
+            form_deactivate('payment_info_account');
+            form_deactivate('payment_info_username');
+            form_hide('payment_info_id_number');
+        }
+    }
+
+    // 显示费用参考值
+    function refresh_price_tips(){
+        let category = $('#category');
+        let price_tips = $('#price_tips');
+        let tax_free_tips = $('#tax_free_tips');
+        let charge_duration = $('#project_task_charge_duration').val();
+        let expert_cpt = $('#expert_cpt').val();
+        let expert_cpt_taxed = $('#expert_cpt_taxed').val() == 'true' ? '税后' : '税前';
+        if(category.val() === 'expert'){
+            var refer_fee = (parseFloat(expert_cpt) * parseInt(charge_duration) / 60).toFixed(1);
+            price_tips.html('参考值: ' + [refer_fee, `${expert_cpt}(${expert_cpt_taxed})`, charge_duration].join(', ') + 'min');
+            tax_free_tips.html(`剩余免税额度: ${$('#expert_tax_free_limit').val()}`);
+        } else {
+            price_tips.html('');
+            tax_free_tips.html('');
+        }
+    }
+</script>

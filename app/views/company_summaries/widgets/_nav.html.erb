@@ -1,0 +1,12 @@
+<ul class="nav nav-tabs">
+    <li class="nav-item">
+        <%= link_to v_index_company_summaries_path, class: "nav-link #{active == 1 ? 'active' : ''}" do %>
+            <i class="fa fa-th-large"></i> <%= mt(:company_summary) %>
+        <% end %>
+    </li>
+    <li class="nav-item">
+        <%= link_to v_summary_chart_company_summaries_path, class: "nav-link #{active == 2 ? 'active' : ''}" do %>
+            <i class="fa fa-pie-chart"></i> <%= '统计图' %>
+        <% end %>
+    </li>
+</ul>

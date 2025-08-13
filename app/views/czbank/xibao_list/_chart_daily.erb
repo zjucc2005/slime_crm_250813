@@ -1,0 +1,127 @@
+<div class="d-flex justify-content-between mb-4">
+    <h3 class="text-bold mt-4 ml-4">
+        <span>奋战40天智慧大额存单销售</span><br>
+        <span>数据分析日报（<%= Time.parse(@date).strftime('%m.%d') %>）</span>
+    </h3>
+    <%= image_pack_tag 'czbank_logo_tr.png', style: 'height: 90px; margin-top: -15px; margin-right: -15px;' %>
+</div>
+
+<div class="text-center mb-4">
+    <span class="chart_sale_field_font">今日总销售额：</span>
+    <span class="chart_sale_value_font"><%= @org_ranking.sum{|item| item[:sale_value]} %></span>
+    <span class="chart_sale_field_font mr-5">万元</span>
+    <span class="chart_sale_field_font">总销售笔数：</span>
+    <span class="chart_sale_value_font"><%= @org_ranking.sum{|item| item[:bill_count]} %></span>
+    <span class="chart_sale_field_font">笔</span>
+</div>
+
+<div class="text-center">
+    <div class="chart_section_title mt-4 mb-2">机构当日销售金额及占比</div>
+</div>
+<div class="text-center">
+    <div id="chart1-<%= @date %>" style="height: 450px;"></div>
+</div>
+
+<div class="text-center">
+    <div class="chart_section_title mt-4 mb-2">机构笔数排行榜</div>
+</div>
+
+<div class="text-center mb-4">
+    <div id="chart2-<%= @date %>" style="height: 300px;"></div>
+</div>
+
+<script>
+    $(function(){
+        let chart1 = echarts.init(document.getElementById('chart1-<%= @date %>'), 'default');
+        let option1 = {
+            tooltip: {
+                trigger: 'item'
+            },
+            series: [
+                {
+                    name: 'Access From',
+                    type: 'pie',
+                    radius: '80%',
+                    data: <%= @org_ranking.map{|item| { name: item[:org_name], value: item[:sale_value] } }.to_json.html_safe %>,
+                    label: {
+                        position: 'outside',
+                        alignTo: 'edge',
+                        edgeDistance: '5%',
+                        minMargin: 5,
+                        fontSize: 14,
+                        fontWeight: 'bold',
+                        lineHeight: 15,
+                        formatter: '{b}\n{f|{c}万,{d}%}',
+                        rich: {
+                            f: {
+                                fontSize: 13
+                            }
+                        }
+                    },
+                    labelLayout: function (params) {
+                        const isLeft = params.labelRect.x < chart1.getWidth() / 2;
+                        const points = params.labelLinePoints;
+                        // Update the end point.
+                        points[2][0] = isLeft
+                            ? params.labelRect.x
+                            : params.labelRect.x + params.labelRect.width;
+                        return {
+                            labelLinePoints: points
+                        };
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }
+            ]
+        };
+        chart1.setOption(option1);
+
+        let chart2 = echarts.init(document.getElementById('chart2-<%= @date %>'), 'default');
+        let option2 = {
+            grid: {
+                bottom: '25%',
+            },
+            tooltip: {
+                trigger: 'item'
+            },
+            xAxis: {
+                type: 'category',
+                data: <%= @org_ranking.map{|item| item[:org_name]}.to_json.html_safe %>,
+                axisLabel: {
+                    interval: 0,
+                    rotate: 45,
+                    fontWeight: 'bold',
+                    height: 100
+                },
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series: [
+                {
+                    data: <%= @org_ranking.map{|item| item[:bill_count]}.to_json.html_safe %>,
+                    type: 'bar',
+                    barWidth: 15,
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: '#d11407' },
+                            { offset: 1, color: '#71100e' }
+                        ])
+                    },
+                    label: {
+                        show: true,
+                        position: 'top',
+                        color: '#333',
+                        fontWeight: 'bold'
+                    }
+                }
+            ]
+        };
+        chart2.setOption(option2);
+    })
+</script>

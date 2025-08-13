@@ -1,0 +1,45 @@
+<%= model_error_tag(@call_record) %>
+
+<div class="row">
+    <div class="col-12 form-group">
+        <span class="badge badge-light"><%= show_creator(@call_record) %></span>
+        <span class="badge badge-light"><%= show_timestamps(@call_record) %></span>
+    </div>
+    <%= f.hidden_field :project_id %>
+    <%= f.hidden_field :candidate_id %>
+
+    <div class="col-3 form-group">
+        <%= f.label :name %><span class="text-red">*</span>
+        <%= f.text_field :name, required: true, class:'form-control' %>
+    </div>
+    <div class="col-3 form-group">
+        <%= f.label :phone %>
+        <%= f.text_field :phone, class:'form-control' %>
+    </div>
+    <div class="col-3 form-group">
+        <%= f.label :company %>
+        <%= f.text_field :company, class:'form-control' %>
+    </div>
+    <div class="col-3 form-group">
+        <%= f.label :department %>
+        <%= f.text_field :department, class: 'form-control' %>
+    </div>
+    <div class="col-3 form-group">
+        <%= f.label :title %>
+        <%= f.text_field :title, class:'form-control' %>
+    </div>
+    <div class="col-3 form-group">
+        <%= f.label :status %>
+        <%= f.select :status, CallRecord::STATUS.to_a.map(&:reverse), { include_blank: false }, class:'form-control select2' %>
+    </div>
+</div>
+<div class="row">
+    <div class="col-12 form-group">
+        <%= f.label :project_requirement_id, mt(:project_requirement) %>
+        <%= f.select :project_requirement_id, @call_record.project.project_requirements.order(id: :asc).map{|item| [item.title, item.id]}, { include_blank: default_prompt }, class: 'form-control select2' %>
+    </div>
+    <div class="col-12 form-group">
+        <%= f.label :memo %>
+        <%= f.text_area :memo, rows: 5, class:'form-control' %>
+    </div>
+</div>

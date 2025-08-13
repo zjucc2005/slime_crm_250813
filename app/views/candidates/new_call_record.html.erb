@@ -1,0 +1,17 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('phone') %> <%= t('action.new_model', model: mt(:call_record)) %></h5>
+        <%= link_to fa_icon_tag('close'), return_to(@return_to || candidates_path), class: 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <%= form_for @call_record, url: call_records_path(return_to: @return_to || candidates_path) do |f| %>
+            <%= render partial: 'call_records/form', locals: { f: f } %>
+
+            <div class="form-group mb-0">
+                <%= f.submit t('action.submit'), :class => 'btn btn-submit' %>
+                <%= link_to t('action.back'), return_to(@return_to || candidates_path), class: 'btn btn-back' %>
+            </div>
+        <% end %>
+    </div>
+</div>

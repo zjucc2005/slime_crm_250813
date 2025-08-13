@@ -1,0 +1,64 @@
+<div class="card">
+    <div class="card-header">
+        <h5><i class="fa fa-phone"></i> <%= mt(:call_record) %></h5>
+        <%= link_to fa_icon_tag('close'), 'javascript:history.go(-1);', :class => 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <div class="row">
+            <div class="col-12 d-flex flex-column flex-lg-row justify-content-between">
+                <h6>
+                    <span class="text-gray mr-3"><%= "# #{@candidate.uid}" %></span>
+                    <span><%= @candidate.last_name %> <%= @candidate.first_name %></span>
+                </h6>
+                <div class="btn-group btn-group-sm">
+                    <%= link_to new_candidate_comment_path(candidate_id: @candidate.id), :class => 'btn btn-primary' do %>
+                        <%= fa_icon_tag('plus') %> <%= t('action.add_model', :model => mt(:candidate_comment)) %>
+                    <% end if false # can?(:new, CandidateComment) %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <a class="nav-link active" data-toggle="tab" href="#call_records">
+                    <%= mt(:call_record) %>
+                    <%= count_badge(@call_records.count) %>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#comments">
+                    <%= mt(:candidate_comment) %>
+                    <%= count_badge(@candidate_comments.count) %>
+                </a>
+            </li>
+        </ul>
+         
+        <!-- Tab panes -->
+        <div class="tab-content">
+          <div class="tab-pane active" id="call_records">
+            <div class="candidate-comment-group mt-3">
+                <% @call_records.each do |call_record| %>
+                    <div class="candidate-comment-unit">
+                        <span class="badge badge-light"><%= show_creator(call_record) %></span>
+                        <span class="badge badge-light"><%= show_timestamps(call_record) %></span>
+                        <p class="content"><%= call_record.memo %></p>
+                    </div>
+                <% end %>
+            </div>
+          </div>
+          <div class="tab-pane" id="comments">
+            <div class="candidate-comment-group mt-3">
+                <% @candidate_comments.each do |comment| %>
+                    <div class="candidate-comment-unit">
+                        <span class="badge badge-light"><%= show_creator(comment) %></span>
+                        <span class="badge badge-light"><%= show_timestamps(comment) %></span>
+                        <p class="content"><%= content_tag(:i, nil, class: 'fa fa-flag text-red') if comment.is_top? %><%= comment.content %></p>
+                    </div>
+                <% end%>
+            </div>
+          </div>
+        </div>
+    </div>
+</div>

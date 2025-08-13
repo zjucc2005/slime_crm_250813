@@ -1,0 +1,368 @@
+<!-- total performance chart -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <%= fa_icon_tag('bar-chart') %>
+            总业绩
+        </h5>
+        <%= link_to fa_icon_tag('close'), root_path, :class => 'card-header-close' %>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-lg-3 col-12">
+                <%= form_tag request.path, :method => :get do %>
+                    <% if current_user.su? %>
+                    <div class="form-group">
+                        <%= label_tag :user_channel, mt(:user_channel) %>
+                        <%= select_tag :user_channel_id, options_for_select(UserChannel.all.map{|uc| [uc.name, uc.id]}, params[:user_channel_id] || current_user.user_channel_id),
+                                       :prompt => default_prompt, :class => 'form-control select2', :onchange => "this.form.submit();" %>
+                    </div>
+                    <% end %>
+                <% end %>
+
+                <div class="card shadow-none border">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <%= @current_month || Time.now.strftime('%Y/%m') %> 业绩表现
+                        </h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="total_performance_summary_wrapper">
+                            <table class="table table-sm card-text">
+                                <thead>
+                                <tr>
+                                    <th class="pl-3">类型</th>
+                                    <th>数值</th>
+                                    <th>环比<br/>(<%= (Time.now.beginning_of_month - 1.month).strftime('%Y/%m') %>)</th>
+                                    <th>同比<br/>(<%= (Time.now.beginning_of_month - 1.year).strftime('%Y/%m') %>)</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                    <td class="pl-3">总小时数</td>
+                                    <td><%= @total_hours || 0 %> 小时</td>
+                                    <td>
+                                        <% if @mom_total_hours.is_a?(Numeric) %>
+                                            <span class="<%= @mom_total_hours >= 0 ? 'text-success' : 'text-danger' %>">
+                                                <%= fa_icon_tag(@mom_total_hours >= 0 ? 'arrow-up' : 'arrow-down') %>
+                                                <%= @mom_total_hours.abs %>%
+                                            </span>
+                                        <% else %>
+                                            N/A
+                                        <% end %>
+                                    </td>
+                                    <td>
+                                        <% if @yoy_total_hours.is_a?(Numeric) %>
+                                            <span class="<%= @yoy_total_hours >= 0 ? 'text-success' : 'text-danger' %>">
+                                                <%= fa_icon_tag(@yoy_total_hours >= 0 ? 'arrow-up' : 'arrow-down') %>
+                                                <%= @yoy_total_hours.abs %>%
+                                            </span>
+                                        <% else %>
+                                            N/A
+                                        <% end %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="pl-3">总需求人数</td>
+                                    <td><%= @total_demand_hours || 0 %></td>
+                                    <td>
+                                        <% if @mom_total_demand_hours.is_a?(Numeric) %>
+                                            <span class="<%= @mom_total_demand_hours >= 0 ? 'text-success' : 'text-danger' %>">
+                                                <%= fa_icon_tag(@mom_total_demand_hours >= 0 ? 'arrow-up' : 'arrow-down') %>
+                                                <%= @mom_total_demand_hours.abs %>%
+                                            </span>
+                                        <% else %>
+                                            N/A
+                                        <% end %>
+                                    </td>
+                                    <td>
+                                        <% if @yoy_total_demand_hours.is_a?(Numeric) %>
+                                            <span class="<%= @yoy_total_demand_hours >= 0 ? 'text-success' : 'text-danger' %>">
+                                                <%= fa_icon_tag(@yoy_total_demand_hours >= 0 ? 'arrow-up' : 'arrow-down') %>
+                                                <%= @yoy_total_demand_hours.abs %>%
+                                            </span>
+                                        <% else %>
+                                            N/A
+                                        <% end %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="pl-3">转化率</td>
+                                    <td><%= @conversion_rate || 0 %>%</td>
+                                    <td>
+                                        <% if @mom_conversion_rate.is_a?(Numeric) %>
+                                            <span class="<%= @mom_conversion_rate >= 0 ? 'text-success' : 'text-danger' %>">
+                                                <%= fa_icon_tag(@mom_conversion_rate >= 0 ? 'arrow-up' : 'arrow-down') %>
+                                                <%= @mom_conversion_rate.abs %>%
+                                            </span>
+                                        <% else %>
+                                            N/A
+                                        <% end %>
+                                    </td>
+                                    <td>
+                                        <% if @yoy_conversion_rate.is_a?(Numeric) %>
+                                            <span class="<%= @yoy_conversion_rate >= 0 ? 'text-success' : 'text-danger' %>">
+                                                <%= fa_icon_tag(@yoy_conversion_rate >= 0 ? 'arrow-up' : 'arrow-down') %>
+                                                <%= @yoy_conversion_rate.abs %>%
+                                            </span>
+                                        <% else %>
+                                            N/A
+                                        <% end %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="pl-3">总收入</td>
+                                    <td><%= @total_income || 0 %></td>
+                                    <td>
+                                        <% if @mom_total_income.is_a?(Numeric) %>
+                                            <span class="<%= @mom_total_income >= 0 ? 'text-success' : 'text-danger' %>">
+                                                <%= fa_icon_tag(@mom_total_income >= 0 ? 'arrow-up' : 'arrow-down') %>
+                                                <%= @mom_total_income.abs %>%
+                                            </span>
+                                        <% else %>
+                                            N/A
+                                        <% end %>
+                                    </td>
+                                    <td>
+                                        <% if @yoy_total_income.is_a?(Numeric) %>
+                                            <span class="<%= @yoy_total_income >= 0 ? 'text-success' : 'text-danger' %>">
+                                                <%= fa_icon_tag(@yoy_total_income >= 0 ? 'arrow-up' : 'arrow-down') %>
+                                                <%= @yoy_total_income.abs %>%
+                                            </span>
+                                        <% else %>
+                                            N/A
+                                        <% end %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="pl-3">毛利</td>
+                                    <td><%= @gross_profit || 0 %></td>
+                                    <td>
+                                        <% if @mom_gross_profit.is_a?(Numeric) %>
+                                            <span class="<%= @mom_gross_profit >= 0 ? 'text-success' : 'text-danger' %>">
+                                                <%= fa_icon_tag(@mom_gross_profit >= 0 ? 'arrow-up' : 'arrow-down') %>
+                                                <%= @mom_gross_profit.abs %>%
+                                            </span>
+                                        <% else %>
+                                            N/A
+                                        <% end %>
+                                    </td>
+                                    <td>
+                                        <% if @yoy_gross_profit.is_a?(Numeric) %>
+                                            <span class="<%= @yoy_gross_profit >= 0 ? 'text-success' : 'text-danger' %>">
+                                                <%= fa_icon_tag(@yoy_gross_profit >= 0 ? 'arrow-up' : 'arrow-down') %>
+                                                <%= @yoy_gross_profit.abs %>%
+                                            </span>
+                                        <% else %>
+                                            N/A
+                                        <% end %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="pl-3">毛利率</td>
+                                    <td><%= @gross_profit_rate || 0 %>%</td>
+                                    <td>
+                                        <% if @mom_gross_profit_rate.is_a?(Numeric) %>
+                                            <span class="<%= @mom_gross_profit_rate >= 0 ? 'text-success' : 'text-danger' %>">
+                                                <%= fa_icon_tag(@mom_gross_profit_rate >= 0 ? 'arrow-up' : 'arrow-down') %>
+                                                <%= @mom_gross_profit_rate.abs %>%
+                                            </span>
+                                        <% else %>
+                                            N/A
+                                        <% end %>
+                                    </td>
+                                    <td>
+                                        <% if @yoy_gross_profit_rate.is_a?(Numeric) %>
+                                            <span class="<%= @yoy_gross_profit_rate >= 0 ? 'text-success' : 'text-danger' %>">
+                                                <%= fa_icon_tag(@yoy_gross_profit_rate >= 0 ? 'arrow-up' : 'arrow-down') %>
+                                                <%= @yoy_gross_profit_rate.abs %>%
+                                            </span>
+                                        <% else %>
+                                            N/A
+                                        <% end %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="pl-3">净利</td>
+                                    <td><%= @net_profit || 0 %></td>
+                                    <td>
+                                        <% if @mom_net_profit.is_a?(Numeric) %>
+                                            <span class="<%= @mom_net_profit >= 0 ? 'text-success' : 'text-danger' %>">
+                                                <%= fa_icon_tag(@mom_net_profit >= 0 ? 'arrow-up' : 'arrow-down') %>
+                                                <%= @mom_net_profit.abs %>%
+                                            </span>
+                                        <% else %>
+                                            N/A
+                                        <% end %>
+                                    </td>
+                                    <td>
+                                        <% if @yoy_net_profit.is_a?(Numeric) %>
+                                            <span class="<%= @yoy_net_profit >= 0 ? 'text-success' : 'text-danger' %>">
+                                                <%= fa_icon_tag(@yoy_net_profit >= 0 ? 'arrow-up' : 'arrow-down') %>
+                                                <%= @yoy_net_profit.abs %>%
+                                            </span>
+                                        <% else %>
+                                            N/A
+                                        <% end %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="pl-3">净利率</td>
+                                    <td><%= @net_profit_rate || 0 %>%</td>
+                                    <td>
+                                        <% if @mom_net_profit_rate.is_a?(Numeric) %>
+                                            <span class="<%= @mom_net_profit_rate >= 0 ? 'text-success' : 'text-danger' %>">
+                                                <%= fa_icon_tag(@mom_net_profit_rate >= 0 ? 'arrow-up' : 'arrow-down') %>
+                                                <%= @mom_net_profit_rate.abs %>%
+                                            </span>
+                                        <% else %>
+                                            N/A
+                                        <% end %>
+                                    </td>
+                                    <td>
+                                        <% if @yoy_net_profit_rate.is_a?(Numeric) %>
+                                            <span class="<%= @yoy_net_profit_rate >= 0 ? 'text-success' : 'text-danger' %>">
+                                                <%= fa_icon_tag(@yoy_net_profit_rate >= 0 ? 'arrow-up' : 'arrow-down') %>
+                                                <%= @yoy_net_profit_rate.abs %>%
+                                            </span>
+                                        <% else %>
+                                            N/A
+                                        <% end %>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-9 col-12">
+                <div id="performance_chart" style="height: 480px;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function(){
+        let performance_chart = echarts.init(document.getElementById('performance_chart'), 'default');
+        let res = <%= @result.to_json.html_safe || '[]' %>;
+        console.log('Chart data:', res);
+        
+        // 添加空值检查
+        if (!res || res === null) {
+            res = [];
+        }
+        
+        // 获取x轴数据，如果为空则生成最近12个月的月份
+        let xAxisData = <%= @x_axis.to_json.html_safe || '[]' %>;
+        if (!xAxisData || xAxisData.length === 0) {
+            xAxisData = [];
+            let now = new Date();
+            for (let i = 11; i >= 0; i--) {
+                let d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                let month = d.getMonth() + 1;
+                xAxisData.push(d.getFullYear() + '/' + (month < 10 ? '0' + month : month));
+            }
+        }
+        
+        let performance_data = [];
+        if (res.length > 0) {
+            // 只保留总收入、毛利和净利
+            performance_data = res.filter(item => 
+                item.name === '总收入' || item.name === '毛利' || item.name === '净利'
+            ).map(item => {
+                return {
+                    name: item.name,
+                    type: 'bar',
+                    data: item.data,
+                    label: {
+                        show: item.name === '毛利' || item.name === '净利',
+                        position: 'top',
+                        formatter: function(params) {
+                            // 查找对应的毛利率或净利率数据
+                            let rateData = null;
+                            if (item.name === '毛利') {
+                                rateData = res.find(d => d.name === '毛利率(%)');
+                            } else if (item.name === '净利') {
+                                rateData = res.find(d => d.name === '净利率(%)');
+                            }
+                            
+                            if (rateData && rateData.data && rateData.data[params.dataIndex] !== undefined) {
+                                return rateData.data[params.dataIndex] + '%';
+                            }
+                            return '';
+                        }
+                    }
+                }
+            });
+        } else {
+            // 如果没有数据，只添加总收入、毛利和净利的空数据系列
+            performance_data = [
+                {
+                    name: '总收入',
+                    type: 'bar',
+                    data: new Array(xAxisData.length).fill(0)
+                },
+                {
+                    name: '毛利',
+                    type: 'bar',
+                    data: new Array(xAxisData.length).fill(0),
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: '0%'
+                    }
+                },
+                {
+                    name: '净利',
+                    type: 'bar',
+                    data: new Array(xAxisData.length).fill(0),
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: '0%'
+                    }
+                }
+            ];
+        }
+
+        let performance_option = {
+            title: {
+                text: '总业绩月度统计',
+                subtext: 'Monthly Performance Statistics'
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow'
+                }
+            },
+            legend: {
+                data: ['总收入', '毛利', '净利']
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: xAxisData
+            },
+            yAxis: {
+                type: 'value',
+                name: '金额'
+            },
+            series: performance_data
+        };
+
+        performance_chart.setOption(performance_option);
+        
+        // 自动调整图表大小
+        window.addEventListener('resize', function() {
+            performance_chart.resize();
+        });
+    });
+</script>

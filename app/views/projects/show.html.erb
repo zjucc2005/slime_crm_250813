@@ -1,0 +1,136 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('map') %> <%= mt(:project) %></h5>
+        <%= link_to fa_icon_tag('close'), 'javascript:history.go(-1);', :class => 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <div class="row">
+            <div class="col-12 d-flex flex-column flex-lg-row justify-content-between">
+                <h6>
+                    <span class="text-gray mr-3"><%= "# #{@project.uid}" %></span>
+                    <span><%= @project.name %></span>
+                </h6>
+                <% if can?(:edit, Project) && @can_operate %>
+                    <div class="btn-group btn-group-sm">
+                        <div class="btn-group btn-group-sm">
+                            <%= render :partial => 'projects/widgets/export_billing_modal', :locals => { :project => @project } %>
+                        </div>
+
+                        <%= link_to start_project_path(@project), :method => :post, :class => 'btn btn-success', :data => { :confirm => t(:sure)}  do %>
+                            <%= fa_icon_tag('edit') %> <%= mt(:project, :start) %>
+                        <% end if can?(:start, Project) && @project.can_start? %>
+                        <%= link_to finish_project_path(@project), method: :post, class: 'btn btn-success', data: { confirm: t(:sure)}  do %>
+                            <%= fa_icon_tag('edit') %> <%= mt(:project, :close) %>
+                        <% end if can?(:finish, Project) && @project.can_finish? %>
+                        <% if can?(:billing, Project) && @project.can_billing? %>
+                        <div class="btn-group btn-group-sm">
+                            <%= render partial: 'projects/widgets/billing_modal', locals: { project: @project } %>
+                        </div>
+                        <% end %>
+                        <%#= link_to billing_project_path(@project), method: :post, class: 'btn btn-success', data: { confirm: t(:sure)}  do %>
+                            <%#= fa_icon_tag('edit') %> <%#= mt(:project, :billing) %>
+                        <%# end if can?(:billing, Project) && @project.can_billing? %>
+                        <%= link_to billed_project_path(@project), method: :post, class: 'btn btn-success', data: { confirm: t(:sure)}  do %>
+                            <%= fa_icon_tag('edit') %> <%= mt(:project, :billed) %>
+                        <% end if can?(:billed, Project) && @project.can_billed? %>
+                        <%= link_to edit_project_path(@project), :class => 'btn btn-dark' do %>
+                            <%= fa_icon_tag('edit') %> <%= "#{t('action.edit_model', :model => mt(:project))}" %>
+                        <% end if can?(:edit, Project) && @project.can_edit? %>
+                        <%= link_to project_path(@project), :method => :delete, :class => 'btn btn-danger', :data => { :confirm => t(:sure_to_delete)} do %>
+                            <%= fa_icon_tag('remove') %> <%= "#{t('action.delete_model', :model => mt(:project))}" %>
+                        <% end if can?(:destroy, Project) && @project.can_destroy? %>
+                    </div>
+                <% end %>
+            </div>
+        </div>
+
+        <!-- main info -->
+        <div class="row">
+            <div class="col-12 form-group">
+                <%= project_status_badge(@project.status) %>
+                <span class="badge badge-light"><%= show_creator(@project) %></span>
+                <span class="badge badge-light"><%= show_timestamps(@project) %></span>
+            </div>
+
+            <div class="col-lg-6 col-12 input-group input-group-sm input-group-align">
+                <div class="input-group-prepend">
+                    <span class="input-group-text"><%= mt(:project, :company) %></span>
+                </div>
+                <%= content_tag :span, @project.company.name, :class => 'form-control' %>
+            </div>
+            <div class="col-lg-6 col-12 input-group input-group-sm input-group-align">
+                <div class="input-group-prepend">
+                    <span class="input-group-text"><%= mt(:project, :name) %></span>
+                </div>
+                <%= content_tag :span, @project.name, :class => 'form-control' %>
+            </div>
+            <div class="col-lg-6 col-12 input-group input-group-sm input-group-align">
+                <div class="input-group-prepend">
+                    <span class="input-group-text"><%= mt(:project, :code) %></span>
+                </div>
+                <%= content_tag :span, @project.code, :class => 'form-control' %>
+            </div>
+            <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                <div class="input-group-prepend">
+                    <span class="input-group-text"><%= mt(:project, :started_at) %></span>
+                </div>
+                <%= content_tag :span, @project.started_at.try(:strftime, '%F'), :class => 'form-control' %>
+            </div>
+            <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                <div class="input-group-prepend">
+                    <span class="input-group-text"><%= mt(:project, :ended_at) %></span>
+                </div>
+                <%= content_tag :span, @project.ended_at.try(:strftime, '%F'), :class => 'form-control' %>
+            </div>
+        </div>
+        <% if @project.invoice_file.present? %>
+        <div class="badge badge-info mb-3 px-4">开票信息</div>
+        <div class="row">
+            <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                <div class="input-group-prepend">
+                    <span class="input-group-text">发票号</span>
+                </div>
+                <%= content_tag :span, @project.invoice_no, class: 'form-control' %>
+            </div>
+            <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                <div class="input-group-prepend">
+                    <span class="input-group-text">预计收款时间</span>
+                </div>
+                <%= content_tag :span, @project.invoice_payment_date&.strftime('%F'), class: 'form-control' %>
+            </div>
+            <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                <div class="input-group-prepend">
+                    <span class="input-group-text">发票金额</span>
+                </div>
+                <%= content_tag :span, @project.invoice_amount, class: 'form-control' %>
+            </div>
+            <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                <div class="input-group-prepend">
+                    <span class="input-group-text">发票附件</span>
+                </div>
+                <% if @project.invoice_file.present? %>
+                    <%= link_to @project.invoice_file.identifier, @project.invoice_file.url, target: '_blank', class: 'form-control' %>
+                <% else %>
+                    <%= content_tag :span, nil, class: 'form-control' %>
+                <% end %>
+            </div>
+        </div>
+        <% end %>
+
+        <div class="row">
+            <div class="col-12">
+                <%= render :partial => 'projects/show/project_requirements', :locals => { :project_requirements => @project.project_requirements.where.not(status: 'cancelled').order(id: :asc) } %>
+            </div>
+            <div class="col-lg-6 col-12">
+                <%= render :partial => 'projects/show/users', :locals => { :users => @project.users.order(:role => :desc) } %>
+                <%= render :partial => 'projects/show/clients', :locals => { :project_clients => @project.project_candidates.client.order(created_at: :asc) } %>
+                <%= render :partial => 'projects/show/experts', :locals => { :experts => @project.experts.limit(10) } %>
+            </div>
+            <div class="col-lg-6 col-12">
+                <%= render :partial => 'projects/show/project_tasks', :locals => { :project_tasks => @project.project_tasks.where(status: %w[ongoing finished]).order(:created_at => :desc).limit(12) } %>
+            </div>
+        </div>
+
+    </div>
+</div>

@@ -1,0 +1,17 @@
+<div class="card">
+    <div class="card-header">
+        <h5><i class="fa fa-heartbeat text-danger"></i> <%= t('action.new_model', model: mt(:hospital)) %></h5>
+        <%= link_to fa_icon_tag('close'), hospitals_path, class: 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <%= form_for @hospital do |f| %>
+            <%= render partial: 'form', locals: { f: f } %>
+
+            <div class="form-group mb-0">
+                <%= f.submit t('action.submit'), class: 'btn btn-submit' %>
+                <%= link_to t('action.back'), hospitals_path, class: 'btn btn-back' %>
+            </div>
+        <% end %>
+    </div>
+</div>

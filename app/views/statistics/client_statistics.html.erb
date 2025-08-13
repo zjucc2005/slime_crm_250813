@@ -1,0 +1,191 @@
+<!-- client statistics overview -->
+<% content_for :head do %>
+  <% unless content_for?(:vue_element_ui_loaded) %>
+    <%= javascript_include_tag 'https://cdn.jsdelivr.net/npm/vue/dist/vue.js' %>
+    <%= stylesheet_link_tag 'https://unpkg.com/element-ui/lib/theme-chalk/index.css' %>
+    <%= javascript_include_tag 'https://unpkg.com/element-ui/lib/index.js' %>
+    <% content_for :vue_element_ui_loaded, true %>
+  <% end %>
+  <style>
+    /* 自定义日期选择器样式 */
+    .el-date-picker {
+      transition: all 0.3s ease;
+    }
+    .el-date-picker:hover {
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+    }
+    .date-picker-dropdown .el-picker-panel__content {
+      border-radius: 4px;
+    }
+    .date-picker-dropdown .el-date-table td.current:not(.disabled) span {
+      background-color: #409EFF;
+      color: white;
+      border-radius: 50%;
+    }
+    .date-picker-dropdown .el-date-table td.today span {
+      color: #409EFF;
+      font-weight: bold;
+    }
+    .el-button.is-plain:focus, .el-button.is-plain:hover {
+      border-color: #409EFF;
+      color: #409EFF;
+    }
+  </style>
+<% end %>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <%= fa_icon_tag('users') %>
+            客户统计总览
+        </h5>
+        <%= link_to fa_icon_tag('close'), root_path, :class => 'card-header-close' %>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-12">
+                <div id="client_statistics_form_wrapper">
+                    <%= form_tag request.path, :method => :get, :id => 'client_statistics_form' do %>
+                        <div class="row mb-3">
+                            <div class="col-lg-6 col-md-12 text-right">
+                                <label class="text-smaller font-weight-bold mr-3">统计月份</label> 
+                                <el-date-picker 
+                                    v-model="search_form.month" 
+                                    @change="submit" 
+                                    type="month" 
+                                    size="small" 
+                                    value-format="yyyy-MM" 
+                                    placeholder="选择月份" 
+                                    style="width: 70%; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" 
+                                    :clearable="false"
+                                    popper-class="date-picker-dropdown"
+                                ></el-date-picker> 
+                                <!-- 确保隐藏字段的值与Vue模型同步 -->
+                                <input type="hidden" name="month" :value="search_form.month">
+                            </div>
+                            <div class="col-lg-6 col-md-12">
+                                <el-button @click="submit" size="small" plain style="margin-top: 0;" type="primary">
+                                    <i class="el-icon-refresh-right"></i> 刷新
+                                </el-button>
+                            </div>
+                        </div>
+                    <% end %>
+                </div>
+                
+                <div class="table-responsive mt-4">
+                    <table class="table table-bordered table-hover">
+                        <thead class="bg-primary text-white">
+                            <tr>
+                                <th>公司</th>
+                                <th>小时数</th>
+                                <th>总收入</th>
+                                <th>总毛利</th>
+                                <th>毛利率</th>
+                                <th>专家单价</th>
+                                <th>需求量</th>
+                                <th>转化率</th>
+                                <th>项目量</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <% if @client_ranking && @client_ranking.any? %>
+                            <% @client_ranking.sort_by { |client| -(client[:total_hours] || 0) }.each do |client| %>
+                            <tr>
+                                <td>
+                                    <%= link_to client[:name], company_monthly_statistics_statistics_path(company_id: client[:company_id], company_name: client[:name], year: params[:month].present? ? (params[:month].to_s.match?(/^\d{13}$/) ? Time.at(params[:month].to_i / 1000).year : params[:month][0..3]) : Time.now.year), class: 'text-primary', style: 'text-decoration: none; cursor: pointer;', title: '查看公司月度数据' %>
+                                </td>
+                                <td><%= client[:total_hours] || 0 %></td>
+                                <td><%= number_to_currency(client[:total_income] || 0, unit: '¥') %></td>
+                                <td><%= number_to_currency(client[:gross_profit] || 0, unit: '¥') %></td>
+                                <td><%= client[:gross_profit_rate] || 0 %>%</td>
+                                <td><%= number_to_currency((client[:total_hours] && client[:total_hours] > 0) ? (client[:total_income] || 0) / client[:total_hours] : 0, unit: '¥') %></td>
+                                <td><%= client[:demand_hours].to_i || 0 %></td>
+                                <td><%= client[:completion_rate] || 0 %>%</td>
+                                <td><%= client[:project_count] || 0 %></td>
+                            </tr>
+                            <% end %>
+                            <tr class="bg-primary text-white">
+                                <td>总计</td>
+                                <td><%= defined?(@total_hours) && @total_hours ? sprintf('%.2f', @total_hours) : sprintf('%.2f', @client_ranking.sum { |c| (c[:total_hours] || 0).to_f }) %></td>
+                                <td><%= number_to_currency(@total_income || 0, unit: '¥') %></td>
+                                <td><%= number_to_currency(@gross_profit || 0, unit: '¥') %></td>
+                                <td><%= sprintf("%.2f", @gross_profit_rate || 0) %>%</td>
+                                <td><%= number_to_currency((@total_income && @client_ranking.sum { |c| c[:total_hours] || 0 } > 0) ? (@total_income / @client_ranking.sum { |c| c[:total_hours] || 0 }).round(4) : 0, unit: '¥') %></td>
+                                <td><%= @client_ranking.sum { |c| c[:demand_hours] || 0 }.to_i %></td>
+                                <td><%= sprintf("%.2f", @completion_rate || 0) %>%</td>
+                                <td><%= @total_projects || 0 %></td>
+                            </tr>
+                        <% else %>
+                            <tr>
+                                <td colspan="9" class="text-center">暂无数据</td>
+                            </tr>
+                        <% end %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 确保DOM完全加载后再初始化Vue实例
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化 Vue 实例来管理 Element UI 组件
+        // 将Vue实例挂载到包含表单的父元素上，确保el-date-picker能够正确初始化
+        var app = new Vue({
+            el: '#client_statistics_form_wrapper',
+            data: {
+                search_form: {
+                    // 直接使用服务器端提供的params值，确保与URL参数一致
+                    month: '<%= params[:month] || Time.now.strftime("%Y-%m") %>'
+                }
+            },
+            mounted: function() {
+                // 确保表单提交后不会重置月份值
+                console.log('Vue mounted, month value:', this.search_form.month);
+                
+                // 确保el-date-picker显示正确的月份
+                var self = this;
+                this.$nextTick(function() {
+                    // 获取URL参数中的月份值
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const monthParam = urlParams.get('month');
+                    if (monthParam) {
+                        // 确保search_form.month与URL参数一致
+                        self.search_form.month = monthParam;
+                        console.log('Updated month from URL:', monthParam);
+                    }
+                });
+            },
+            methods: {
+                submit: function() {
+                    if (!this.search_form.month) {
+                        console.warn('Month value is empty, using current month');
+                        this.search_form.month = '<%= Time.now.strftime("%Y-%m") %>';
+                    }
+                    console.log('Submitting form with month:', this.search_form.month);
+                    // 确保隐藏字段的值与Vue模型同步
+                    var monthInput = document.querySelector('input[name="month"]');
+                    if (monthInput) {
+                        monthInput.value = this.search_form.month;
+                        console.log('Hidden field value updated:', monthInput.value);
+                        document.getElementById('client_statistics_form').submit();
+                    } else {
+                        console.error('Month input field not found');
+                    }
+                }
+            }
+        });
+        
+        // 监听URL变化，确保刷新后月份选择器显示正确的值
+        window.addEventListener('popstate', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const monthParam = urlParams.get('month');
+            if (monthParam && app) {
+                app.search_form.month = monthParam;
+                console.log('URL changed, updated month:', monthParam);
+            }
+        });
+    });
+</script>

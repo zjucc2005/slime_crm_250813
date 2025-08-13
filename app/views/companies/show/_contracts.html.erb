@@ -1,0 +1,61 @@
+<div class="card card-inner mb-3">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('file-text') %> <%= mt(:contract) %></h5>
+        <%= link_to new_contract_company_path(@company), :class => 'btn btn-primary btn-xs' do %>
+          <%= fa_icon_tag('plus') %> <%= "#{t('action.new', :model => mt(:contract))}" %>
+        <% end if can?(:new_contract, Company) %>
+    </div>
+
+    <div class="card-body table-responsive">
+        <% if contracts.any? %>
+            <table class="table table-sm table-striped nowrap card-text">
+                <thead>
+                <tr>
+                    <th><%= mt(:contract, :id) %></th>
+                    <th><%= mt(:contract, :started_at) %></th>
+                    <th><%= mt(:contract, :ended_at) %></th>
+                    <th><%= mt(:contract, :file) %></th>
+                    <th><%= mt(:contract, :charge_rate) %></th>
+                    <th><%= mt(:contract, :charge_duration) %></th>
+                    <th><%= mt(:contract, :payment_days) %></th>
+                    <th><%= mt(:contract, :payment_way) %></th>
+                    <th><%= mt(:contract, :is_taxed) %></th>
+                    <th><%= mt(:contract, :tax_rate) %></th>
+                    <th><%= mt(:contract, :is_invoice_needed) %></th>
+                    <th><%= mt(:contract, :created_by) %></th>
+                    <th><%= mt(:contract, :created_at) %></th>
+                    <th class="action"><%= t(:operation) %></th>
+                </tr>
+                </thead>
+                <tbody>
+                <% contracts.each do |contract| %>
+                    <tr>
+                        <td><%= content_tag :span, "# #{contract.uid}", :class => 'text-gray' %></td>
+                        <td><%= contract.started_at.strftime('%F') %></td>
+                        <td><%= contract.ended_at.strftime('%F') %></td>
+                        <td><%= link_to contract.file.url do %><%= fa_icon_tag('download') %><% end %></td>
+                        <td><%= "#{contract.charge_rate} #{contract.currency}" %></td>
+                        <td><%= contract.charge_duration %></td>
+                        <td><%= "#{contract.payment_days}#{Contract::TYPE_OF_PAYMENT_DAY[contract.type_of_payment_day]}" %></td>
+                        <td><%= Contract::PAYMENT_WAY[contract.payment_way] %></td>
+                        <td><%= boolean_display(contract.is_taxed) %></td>
+                        <td><%= contract.tax_rate %></td>
+                        <td><%= boolean_display(contract.is_invoice_needed) %></td>
+                        <td><%= contract.creator&.name_cn %></td>
+                        <td><%= contract.created_at.strftime('%F %H:%M') %></td>
+                        <td class="action">
+                            <%= link_to edit_contract_path(contract), :class => 'btn btn-edit btn-xs' do %>
+                                <%= fa_icon_tag('edit') %> <%= t('action.edit', :model => nil) %>
+                            <% end if can?(:edit_contract, Company) %>
+                        </td>
+                    </tr>
+                <% end %>
+                </tbody>
+            </table>
+        <% else %>
+            <div class="p-2 text-center">
+                <h5 class="text-gray mb-0"><%= t(:not_found) %></h5>
+            </div>
+        <% end %>
+    </div>
+</div>

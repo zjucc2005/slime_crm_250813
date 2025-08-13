@@ -1,0 +1,49 @@
+<%= form_for @call_record = CallRecord.new, url: remote_create_call_records_path(project_id: project.id), remote: true, html: { id: "new_call_record_#{project.id}" } do |f| %>
+    <div class="row">
+        <div class="col-2 form-group">
+            <%= f.label :name %><span class="text-red">*</span>
+            <%= f.text_field :name, required: true, class:'form-control' %>
+        </div>
+        <div class="col-2 form-group">
+            <%= f.label :phone %>
+            <%= f.text_field :phone, class:'form-control' %>
+        </div>
+        <div class="col-2 form-group">
+            <%= f.label :company %>
+            <%= f.text_field :company, class:'form-control' %>
+        </div>
+        <div class="col-2 form-group">
+            <%= f.label :department %>
+            <%= f.text_field :department, class: 'form-control' %>
+        </div>
+        <div class="col-2 form-group">
+            <%= f.label :title %>
+            <%= f.text_field :title, class:'form-control' %>
+        </div>
+        <div class="col-2 form-group">
+            <%= f.label :memo %>
+            <%= f.text_field :memo, class:'form-control' %>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-8 form-group">
+            <%= f.label :project_requirement_id, mt(:project_requirement) %>
+            <%= f.select :project_requirement_id, project.project_requirements.order(id: :asc).map{|item| [item.title, item.id]}, { include_blank: default_prompt }, class: 'form-control select2', id: "call_record_project_requirement_#{project.id}" %>
+        </div>
+        <div class="col-2 form-group">
+            <%= f.label :status %>
+            <%= f.select :status, CallRecord::STATUS.to_a.map(&:reverse), { :include_blank => false }, class: 'form-control select2', id: "call_record_status_#{project.id}" %>
+        </div>
+        <div class="col-2">
+            <%= label_tag :space, '&nbsp;'.html_safe %><br>
+            <div class="btn-group w-100">
+                <%= button_tag class: 'btn btn-sm btn-submit w-100' do %>
+                    <i class="fa fa-phone"></i> <%= "#{t('action.new_model', model: mt(:call_record))}" %>
+                <% end %>
+                <%= link_to 'javascript:void(0);', onclick: "utilsLoadingModal({op: 'importCallRecords', project_id: #{project.id}})", class: 'btn btn-sm btn-default' do %>
+                    <i class="fa fa-caret-down"></i>
+                <% end %>
+            </div>
+        </div>
+    </div>
+<% end %>

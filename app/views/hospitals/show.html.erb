@@ -1,0 +1,94 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= model_icon('Hospital') %> <%= mt(:hospital) %></h5>
+        <%= link_to fa_icon_tag('close'), hospitals_path, :class => 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <div class="row">
+            <div class="col-12 d-flex flex-column flex-lg-row justify-content-between">
+                <h6>
+                    <span class="text-gray mr-3"><%= "# #{@hospital.uid}" %></span>
+                    <span><%= @hospital.name %></span>
+                </h6>
+
+                <div class="btn-group btn-group-sm">
+                    <%= button_tag type: 'button', class: 'btn btn-primary', data: { toggle: 'modal', target: '#newDepartmentModal'} do %>
+                        <i class="fa fa-plus"></i> <%= content_tag :span, t('action.add_model', model: mt(:hospital, :department)) %>
+                    <% end %>
+                </div>
+            </div>
+
+            <div class="col-12 form-group">
+                <span class="badge badge-primary"><%= @hospital.province %></span>
+                <span class="badge badge-danger"><%= @hospital.level %></span>
+                <span class="badge badge-light"><%= show_timestamps(@hospital) %></span>
+            </div>
+        </div>
+
+        <div class="row" id="v-departments">
+            <div v-for="dep in departments" :key="dep.id" class="col-4">
+                <div class="ctag">
+                    <div class="ctag-item teal f-2">
+                        <a :href="['/hospitals/' + hospital.id + '/delete_department?hospital_department_id=' + dep.id]" v-if="dep.count == 0" data-method="post" data-confirm="<%= t(:sure_to_delete) %>" class="btn btn-danger btn-xs">
+                            <i class="fa fa-trash"></i>
+                        </a>
+                        {{ dep.name }}
+                    </div>
+                    <div class="ctag-item text-bold">{{ dep.count }}</div>
+                    <div class="ctag-item f-0">
+                        <a :href="['/doctors?hospital_id=' + hospital.id + '&hospital_department_id=' + dep.id]" class="text-decoration-none" target="_blank">
+                            <i class="fa fa-angle-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="newDepartmentModal" class="modal fade">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"><%= t('action.add_model', model: mt(:hospital, :department)) %></h4>
+                <button type="button" data-dismiss="modal" class="close">&times;</button>
+            </div>
+
+            <%= form_tag create_department_hospital_path(@hospital), method: :post do %>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-lg-12 form-group">
+                            <%= label_tag :name, mt(:hospital_department, :name) %>
+                            <%= text_field_tag :name, params[:name], required: true, class: 'form-control' %>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" data-dismiss="modal" class="btn btn-back"><%= t('action.close') %></button>
+                    <%= submit_tag t('action.submit'), class: 'btn btn-submit' %>
+                </div>
+            <% end %>
+        </div>
+    </div>
+</div>
+
+<script>
+    var vm = new Vue({
+        el: '#v-departments',
+        data: {
+            hospital: { id: '<%= @hospital.id %>', name: '<%= @hospital.name %>' },
+            departments: []
+        },
+        mounted: function(){
+            this.$nextTick(function(){
+                var _this_ = this;
+                // 加载部门数据
+                $.get('/hospitals/'+ _this_.hospital.id + '/load_departments', function(data){
+                    _this_.departments = data;
+                    console.log('load departments data:ok')
+                })
+            })
+        }
+    })
+</script>

@@ -1,0 +1,562 @@
+<div class="container-fluid mt-4">
+  <!-- 标题行和按钮 -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">医保专家管理</h2>
+    <div class="btn-group">
+      <a href="<%= new_candidate_path(is_yibao: true) %>" class="btn btn-success me-2">
+        <%= fa_icon_tag('plus') %> 新增专家
+      </a>
+      <a href="<%= new_doctor_path(is_yibao: true) %>" class="btn btn-success me-2">
+        <%= fa_icon_tag('plus') %> 新增医生
+      </a>
+      <button class="btn btn-secondary" id="exportBtn">
+        <%= fa_icon_tag('download') %> 导出数据
+      </button>
+    </div>
+  </div>
+
+  <!-- 筛选区域 -->
+  <div class="card p-3 mb-4 filter-section">
+    <div class="row g-3 align-items-center">
+      <div class="col-md-2">
+        <div class="d-flex align-items-center">
+          <label class="me-2">类别筛选 ： </label>
+          <% current_is_clinical = params[:is_clinical].present? ? params[:is_clinical] == 'true' : true %>
+          <label class="toggle-btn toggle-btn-sm" >
+            <input type="checkbox" id="categoryToggle" <%= 'checked' if current_is_clinical %>>
+            <span class="slider"></span>
+          </label>
+          <span class="ms-2" id="categoryLabel"><%= current_is_clinical ? '临床' : '非临床' %></span>
+        </div>
+      </div>
+      
+
+      <div class="col-md-3">
+        <div class="input-group">
+          <span class="input-group-text">专家姓名</span>
+          <input type="text" class="form-control" id="nameFilter" placeholder="输入名称搜索">
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="input-group">
+          <span class="input-group-text">机构</span>
+          <input type="text" class="form-control" id="institutionFilter" placeholder="输入机构搜索">
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="input-group">
+          <span class="input-group-text">年份范围</span>
+          <select class="form-select" id="startYear">
+            <option value="">起始年份</option>
+            <option value="2020">2020</option>
+            <option value="2021">2021</option>
+            <option value="2022">2022</option>
+            <option value="2023">2023</option>
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
+            <option value="2028">2028</option>
+            <option value="2029">2029</option>
+            <option value="2030">2030</option>
+          </select>
+          <select class="form-select" id="endYear">
+            <option value="">结束年份</option>
+            <option value="2020">2020</option>
+            <option value="2021">2021</option>
+            <option value="2022">2022</option>
+            <option value="2023">2023</option>
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
+            <option value="2028">2028</option>
+            <option value="2029">2029</option>
+            <option value="2030">2030</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="col-md-1">
+        <button class="btn btn-primary w-100" id="searchBtn">
+          <%= fa_icon_tag('search') %> 搜索
+        </button>
+      </div>
+    </div>
+
+    <div class="row mt-3">
+      <div class="col-md-3">
+        <div class="input-group">
+          <span class="input-group-text">费用范围</span>
+          <input type="number" class="form-control" id="minFee" placeholder="最低">
+          <input type="number" class="form-control" id="maxFee" placeholder="最高">
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="form-group">
+          <select class="form-select custom-select" id="subcategoryFilter" <%= 'disabled' if current_is_clinical %>>
+            <option value="">所有非临床类别</option>
+            <option value="comprehensive">综合组</option>
+            <option value="calculation">测算组</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-md-3" id="subcategoryDetailDiv" style="display:none;">
+        <select class="form-select" id="subcategoryDetailFilter">
+          <option value="">所有细分类别</option>
+          <!-- 选项将通过JavaScript动态填充 -->
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="availableOnly">
+          <label class="form-check-label" for="availableOnly">
+            只显示可用专家
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 表格区域 -->
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped table-hover">
+      <thead class="table-light">
+      <tr>
+        <th>操作</th>
+        <th>专家ID</th>
+        <th>姓名</th>
+        <th>机构</th>
+        <th>科室</th>
+        <th>职位</th>
+        <th>费用</th>
+        <th>类别</th>
+        <th class="date-header">2025</th>
+        <th class="date-header">2024</th>
+        <th class="date-header">2023</th>
+        <th class="date-header">2022</th>
+        <th class="date-header">2021</th>
+        <th class="date-header">2020</th>
+      </tr>
+      </thead>
+      <tbody>
+      <% if @candidates.present? %>
+        <% # 读取当前筛选类别 %>
+        <% current_is_clinical = params[:is_clinical].present? ? params[:is_clinical] == 'true' : true %>
+        <% @candidates.each do |candidate| %>
+          <% # 只取当前类别的医保信息 %>
+          <% medical_infos = candidate.medical_insurance_infos.where(is_clinical: current_is_clinical).to_a %>
+          <% is_clinical = current_is_clinical %>
+          <% exp = candidate.latest_work_experience %>
+          <% # 非临床类型和子类型 %>
+          <% non_clinical_type = medical_infos.find { |mi| !mi.is_clinical }&.non_clinical_type %>
+          <% sub_type = medical_infos.find { |mi| !mi.is_clinical }&.sub_type %>
+          <% css_class = is_clinical ? "clinical" : "non-clinical" %>
+          <tr class="<%= css_class %>">
+            <td>
+              <a href="<%= edit_candidate_path(candidate) %>" class="btn btn-sm btn-primary me-1">
+                <%= fa_icon_tag('edit') %>
+              </a>
+              <%= link_to candidate_path(candidate), method: :delete, 
+                  data: { confirm: '确认删除此专家?' }, class: 'btn btn-sm btn-danger' do %>
+                <%= fa_icon_tag('trash') %>
+              <% end %>
+            </td>
+            <td><span class="text-gray"># <%= candidate.uid %></span></td>
+            <td>
+              <%= link_to candidate.name, candidate_path(candidate), target: '_blank' %>
+              <% 
+                willingness_class = case candidate.is_available
+                  when true then "willingness-yes"
+                  when false then "willingness-no"
+                  else "willingness-unknown"
+                end
+                willingness_icon = case candidate.is_available
+                  when true then "check"
+                  when false then "times"
+                  else "question"
+                end
+                willingness_title = case candidate.is_available
+                  when true then "愿意接受访谈"
+                  when false then "不愿意接受访谈"
+                  else "访谈意愿未知"
+                end
+              %>
+              <span class="<%= willingness_class %>" title="<%= willingness_title %>">
+                <%= fa_icon_tag(willingness_icon) %>
+              </span>
+            </td>
+            <td><%= exp&.org_cn %></td>
+            <td><%= exp&.department %></td>
+            <td><%= exp&.title %></td>
+            <td>
+              <% 
+                fee_class = if candidate.cpt.to_i > 4000
+                  "high-fee"
+                elsif candidate.cpt.to_i > 3000
+                  "medium-fee"
+                else
+                  "low-fee"
+                end
+              %>
+              <span class="fee-badge <%= fee_class %>">¥<%= candidate.cpt %></span>
+            </td>
+            <% if is_clinical %>
+              <td>临床</td>
+              <% (2020..2025).to_a.reverse.each do |year| %>
+                <td class="text-center">
+                  <% has_year = medical_infos.any? { |mi| mi.year == year && mi.is_clinical } %>
+                  <input class="form-check-input clinical-checkbox" type="checkbox" <%= has_year ? "checked" : "" %> disabled>
+                </td>
+              <% end %>
+            <% else %>
+              <% 
+                non_clinical_display = if non_clinical_type == 'comprehensive'
+                  "综合组"
+                elsif non_clinical_type == 'calculation'
+                  "测算组"
+                else
+                  "非临床"
+                end
+                
+                badge_class = non_clinical_type == 'calculation' ? 'bg-warning' : 'bg-secondary'
+                
+                sub_type_display = case sub_type
+                when 'pharmacy_economics' then '药经'
+                when 'pharmacy' then '药学'
+                when 'clinical' then '临床'
+                when 'static_distribution' then '静配中心'
+                when 'insurance_official' then '医保官员'
+                when 'cea' then 'CEA'
+                when 'bia' then 'BIA'
+                else ''
+                end
+                
+                sub_badge_class = case sub_type
+                when 'pharmacy_economics' then 'bg-success'
+                when 'cea' then 'bg-secondary'
+                when 'bia' then 'bg-info'
+                when 'insurance_official' then 'bg-primary'
+                when 'static_distribution' then 'bg-info'
+                else 'bg-secondary'
+                end
+              %>
+              <td>非临床 <span class="badge <%= badge_class %> subcategory-badge"><%= non_clinical_display %></span> <span class="badge <%= sub_badge_class %> subcategory-detail-badge"><%= sub_type_display %></span></td>
+              <% 
+                # 对每一年查找是否有记录及其类型
+                (2020..2025).to_a.reverse.each do |year|
+                  year_info = medical_infos.find { |mi| mi.year == year && !mi.is_clinical }
+                  if year_info
+                    year_sub_type = case year_info.sub_type
+                    when 'pharmacy_economics' then '药经'
+                    when 'pharmacy' then '药学'
+                    when 'clinical' then '临床'
+                    when 'static_distribution' then '静配中心'
+                    when 'insurance_official' then '医保官员'
+                    when 'cea' then 'CEA'
+                    when 'bia' then 'BIA'
+                    else ''
+                    end
+                  %>
+                  <td class="text-center"><%= year_sub_type %></td>
+                <% else %>
+                  <td class="text-center">-</td>
+                <% end %>
+              <% end %>
+            <% end %>
+          </tr>
+        <% end %>
+      <% else %>
+        <tr>
+          <td colspan="14" class="text-center">暂无数据</td>
+        </tr>
+      <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 分页 -->
+  <% if @candidates.present? %>
+    <%= will_paginate @candidates, class: 'pagination justify-content-center mt-3' %>
+  <% end %>
+</div>
+
+<style>
+  .table-fixed {
+    table-layout: fixed;
+  }
+  .category-cell {
+    min-width: 120px;
+  }
+  .date-header {
+    min-width: 100px;
+    text-align: center;
+  }
+  .form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+  }
+  .subcategory-badge {
+    font-size: 0.8rem;
+  }
+  .filter-section {
+    background-color: #f8f9fa;
+    border-radius: 5px;
+  }
+  .toggle-btn {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+  }
+  .toggle-btn input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 30px;
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+  }
+  input:checked + .slider {
+    background-color: #198754;
+  }
+  input:checked + .slider:before {
+    transform: translateX(30px);
+  }
+  .fee-badge {
+    font-weight: bold;
+  }
+  .low-fee {
+    color: #198754;
+  }
+  .medium-fee {
+    color: #ffc107;
+  }
+  .high-fee {
+    color: #dc3545;
+  }
+  .willingness-icon {
+    margin-left: 5px;
+    font-size: 0.9em;
+    cursor: pointer;
+  }
+  .willingness-yes {
+    color: #198754; /* 绿色 */
+  }
+  .willingness-no {
+    color: #dc3545; /* 红色 */
+  }
+  .willingness-unknown {
+    color: #ffc107; /* 黄色 */
+  }
+  .toggle-btn-sm {
+    width: 44px;
+    height: 24px;
+  }
+  .toggle-btn-sm .slider:before {
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+  }
+  input:checked + .slider:before {
+    transform: translateX(20px);
+  }
+  .custom-select {
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    padding: 0.375rem 0.75rem;
+    background-color: #fff;
+    text-align: left;
+    font-size: 0.9rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  }
+  .custom-select:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  }
+  .custom-select:hover {
+    border-color: #b3b3b3;
+  }
+</style>
+
+<script>
+  $(document).ready(function() {
+    // 注释：非临床类别选择框的初始状态已在HTML中设置
+    
+    // 从URL参数中获取所有筛选条件并初始化表单
+    var urlParams = new URLSearchParams(window.location.search);
+    
+    // 初始化专家姓名
+    if(urlParams.get('name')) {
+      $('#nameFilter').val(urlParams.get('name'));
+    }
+    
+    // 初始化机构
+    if(urlParams.get('institution')) {
+      $('#institutionFilter').val(urlParams.get('institution'));
+    }
+    
+    // 初始化年份范围
+    if(urlParams.get('start_year')) {
+      $('#startYear').val(urlParams.get('start_year'));
+    }
+    if(urlParams.get('end_year')) {
+      $('#endYear').val(urlParams.get('end_year'));
+    }
+    
+    // 初始化费用范围
+    if(urlParams.get('min_fee')) {
+      $('#minFee').val(urlParams.get('min_fee'));
+    }
+    if(urlParams.get('max_fee')) {
+      $('#maxFee').val(urlParams.get('max_fee'));
+    }
+    
+    // 初始化可用专家选项
+    if(urlParams.get('is_available') === 'true') {
+      $('#availableOnly').prop('checked', true);
+    }
+    
+    // 初始化非临床类型和子类型选择框（HTML已设置基本状态）
+    var isClinical = urlParams.get('is_clinical');
+    if(isClinical === 'false') {
+      // 只处理非临床模式下的具体参数值
+      var nonClinicalType = urlParams.get('non_clinical_type');
+      if(nonClinicalType) {
+        $('#subcategoryFilter').val(nonClinicalType).change();
+        
+        // 如果有子类型参数，也初始化相应的下拉框
+        var subType = urlParams.get('sub_type');
+        if(subType) {
+          setTimeout(function() {
+            $('#subcategoryDetailFilter').val(subType);
+          }, 100); // 给一点时间让子类型选项加载完成
+        }
+      }
+    }
+    
+    // 类别切换 - 只更新UI显示，不触发搜索
+    $('#categoryToggle').change(function() {
+      if($(this).is(':checked')) {
+        $('#categoryLabel').text('临床');
+        $('#subcategoryFilter').prop('disabled', true);
+        $('#subcategoryDetailDiv').hide();
+      } else {
+        $('#categoryLabel').text('非临床');
+        $('#subcategoryFilter').prop('disabled', false);
+      }
+    });
+    
+    // 非临床类别筛选 - 只更新UI显示，不触发搜索
+    $('#subcategoryFilter').change(function() {
+      var selectedValue = $(this).val();
+      if(selectedValue) {
+        $('#subcategoryDetailDiv').show();
+        $('#subcategoryDetailFilter').empty().append('<option value="">所有细分类别</option>');
+        
+        if(selectedValue === 'comprehensive') {
+          $('#subcategoryDetailFilter').append('<option value="pharmacy_economics">药经</option>');
+          $('#subcategoryDetailFilter').append('<option value="pharmacy">药学</option>');
+          $('#subcategoryDetailFilter').append('<option value="clinical">临床</option>');
+          $('#subcategoryDetailFilter').append('<option value="static_distribution">静配中心</option>');
+          $('#subcategoryDetailFilter').append('<option value="insurance_official">医保官员</option>');
+        } else if(selectedValue === 'calculation') {
+          $('#subcategoryDetailFilter').append('<option value="cea">CEA</option>');
+          $('#subcategoryDetailFilter').append('<option value="bia">BIA</option>');
+        }
+      } else {
+        $('#subcategoryDetailDiv').hide();
+      }
+    });
+    
+    // 搜索功能
+    $('#searchBtn').click(function() {
+      const nameFilter = $('#nameFilter').val().toLowerCase();
+      const institutionFilter = $('#institutionFilter').val().toLowerCase();
+      const startYear = $('#startYear').val();
+      const endYear = $('#endYear').val();
+      const minFee = $('#minFee').val();
+      const maxFee = $('#maxFee').val();
+      const subcategoryFilter = $('#subcategoryFilter').val();
+      const subcategoryDetailFilter = $('#subcategoryDetailFilter').val();
+      const availableOnly = $('#availableOnly').is(':checked');
+      
+      // 构建查询参数
+      let params = {};
+      if(nameFilter) params.name = nameFilter;
+      if(institutionFilter) params.institution = institutionFilter;
+      if(startYear) params.start_year = startYear;
+      if(endYear) params.end_year = endYear;
+      if(minFee) params.min_fee = minFee;
+      if(maxFee) params.max_fee = maxFee;
+      if(!$('#categoryToggle').is(':checked')) {
+        params.is_clinical = false;
+        if(subcategoryFilter) params.non_clinical_type = subcategoryFilter;
+        if(subcategoryDetailFilter) params.sub_type = subcategoryDetailFilter;
+      } else {
+        params.is_clinical = true;
+      }
+      if(availableOnly) params.is_available = true;
+      
+      // 重新加载页面，携带查询参数
+      window.location.href = '<%= yibao_candidates_path %>' + '?' + $.param(params);
+    });
+    
+    // 导出功能
+    $('#exportBtn').click(function() {
+      alert('数据导出功能将在后续版本中实现');
+    });
+  });
+</script>
+
+<style>
+  .form-check-input.clinical-checkbox:checked {
+    background-color: #00ff00 !important;
+    border-color: #00ff00 !important;
+    box-shadow: 0 0 5px rgba(0, 255, 0, 0.5) !important;
+    position: relative;
+  }
+  .form-check-input.clinical-checkbox:checked::after {
+    content: '✓';
+    color: #ffffff !important;
+    font-weight: bold;
+    font-size: 12px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #00ff00;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+  }
+</style>

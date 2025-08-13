@@ -1,0 +1,68 @@
+<div class="card card-inner mb-3">
+    <div class="card-header">
+        <h5>
+            <%= fa_icon_tag('tags') %> <%= mt(:project_task) %>
+            <%= link_to t(:show_all), project_tasks_project_path(@project), :class => 'h6' %>
+        </h5>
+        <%= link_to add_project_task_project_path(@project), :class => 'btn btn-primary btn-xs' do %>
+            <%= fa_icon_tag('plus') %> <%= t('action.add') %>
+        <% end if can?(:add_project_task, Project) && @can_operate && @project.can_add_task? %>
+    </div>
+
+    <div class="card-body table-responsive">
+        <% if project_tasks.any? %>
+            <table class="table table-sm table-striped card-text">
+                <thead>
+                <tr>
+                    <th><%= mt(:project_task, :id) %></th>
+                    <th><%= mt(:project_task, :category) %></th>
+                    <th><%= mt(:project_task, :interview_form) %></th>
+                    <th><%= mt(:expert) %></th>
+                    <th><%= mt(:project_task, :expert_alias) %></th>
+                    <th><%= mt(:project_task, :started_at) %></th>
+                    <th><%= mt(:project_task, :duration) %></th>
+                    <th><%= mt(:project_task, :charge_duration) %></th>
+                    <th class="action"><%= t(:operation) %></th>
+                </tr>
+                </thead>
+                <tbody>
+                <% project_tasks.each do |task| %>
+                    <tr>
+                        <td><%= content_tag :span, "# #{task.uid}", :class => 'text-gray' %></td>
+                        <td><%= project_task_category_badge(task.category) %></td>
+                        <td><%= project_task_interview_form_badge(task.interview_form) %></td>
+                        <td><%= task.expert.name %></td>
+                        <td><%= task.expert_alias %></td>
+                        <td><%= task.started_at.strftime('%F %H:%M') %></td>
+                        <td><%= task.duration %></td>
+                        <td><%= task.charge_duration %></td>
+                        <td class="action">
+                            <%= link_to edit_project_task_path(task), :class => 'btn btn-dark btn-xs' do %>
+                                <%= fa_icon_tag('edit') %> <%= t('action.edit') %>
+                            <% end if can?(:edit, ProjectTask) && @can_operate && task.can_be_edited_by(current_user) %>
+                            <%= link_to project_task_path(task), :class => 'btn btn-primary btn-xs' do %>
+                                <%= fa_icon_tag('file') %> <%= t('action.detail') %>
+                            <% end if task.can_show? %>
+                        </td>
+                    </tr>
+                <% end %>
+                <tr>
+                    <td colspan="9" class="text-center">
+                        <%= link_to '...', project_tasks_project_path(@project), :title => t(:show_all) %>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        <% else %>
+            <div class="p-2 text-center">
+                <h5 class="text-gray mb-0">
+                    <% if @project.can_add_task? %>
+                        <%= t(:not_found) %>
+                    <% else %>
+                        启动项目后才能添加任务
+                    <% end %>
+                </h5>
+            </div>
+        <% end %>
+    </div>
+</div>

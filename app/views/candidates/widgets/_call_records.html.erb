@@ -1,0 +1,11 @@
+<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" title="<%= mt(:call_record) %>">
+  <i class="fa fa-phone"></i>
+  <%= count_badge(candidate.call_records.count) %>
+</button>
+<div class="dropdown-menu">
+    <div class="dropdown-header"><%= mt(:call_record) %></div>
+    <%= link_to t('action.add_model', model: mt(:call_record)), 'javascript:void(0);', onclick: "loadingModal('newCallRecord',#{candidate.id}, '#{candidate.category == 'doctor' ? doctor_path(candidate) : candidate_path(candidate)}')", class: 'dropdown-item' %>
+    <%= link_to call_records_candidate_path(candidate_id: candidate.id), class: 'dropdown-item' do %>
+        <%= '历史通话记录' %> <%= count_badge(candidate.call_records.count) %>
+    <% end %>
+</div>

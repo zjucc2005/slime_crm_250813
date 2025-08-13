@@ -1,0 +1,104 @@
+<ul class="nav nav-tabs">
+    <li class="nav-item">
+        <a class="nav-link active">
+            <i class="fa fa-sort-amount-desc"></i> 转化率排名
+        </a>
+    </li>
+</ul>
+
+<div id="app">
+    <!-- 工具栏 -->
+    <el-card class="cc-top-bar mb-1">
+        <el-date-picker
+            v-model="search_form.stime"
+            value-format="yyyy-MM-dd"
+            type="date"
+            size="mini"
+            placeholder="开始日期"></el-date-picker>
+        <i class="el-icon-right"></i>
+        <el-date-picker
+            v-model="search_form.etime"
+            value-format="yyyy-MM-dd"
+            type="date"
+            size="mini"
+            placeholder="结束日期"></el-date-picker>
+        <el-button
+            type="primary"
+            size="mini"
+            icon="el-icon-search"
+            @click="search"
+            class="mr-2">搜索</el-button>
+        <el-radio-group v-model="search_form.time_range" size="mini" @input="select_time_range">
+            <el-radio-button label="season">本季度</el-radio-button>
+            <el-radio-button label="year">本年度</el-radio-button>
+        </el-radio-group>
+        <%# <el-button size="mini" @click="debug">DEBUG</el-button> %>
+    </el-card>
+
+    <!-- 统计结果 -->
+    <el-card class="box-card mb-1">
+        <el-table :data="sta_data" size="mini" border stripe>
+            <el-table-column prop="uid" label="ID" width="70"></el-table-column>
+            <el-table-column prop="name" label="姓名"></el-table-column>
+            <el-table-column prop="nickname" label="昵称"></el-table-column>
+            <el-table-column prop="company_name" label="公司"></el-table-column>
+            <el-table-column prop="title" label="职位"></el-table-column>
+            <el-table-column prop="sum_demand" label="需求总人数" sortable></el-table-column>
+            <el-table-column prop="sum_succ" label="约访总人数" sortable></el-table-column>
+            <el-table-column prop="zhuanhualv" label="转化率" sortable>
+                <template slot-scope="scope">{{ scope.row.zhuanhualv * 1000 / 10 }} %</template>
+            </el-table-column>
+        </el-table>
+    </el-card>
+    
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            search_form: {
+                stime: '',
+                etime: '',
+                time_range: 'season' // season|year
+            },
+            sta_data: []
+        },
+        mounted: function(){
+            this.load_sta_data()
+        },
+        methods: {
+            debug() {
+                console.log('this.$data', this.$data)
+            },
+            search() {
+                this.search_form.time_range = ''
+                this.load_sta_data()
+            },
+            select_time_range(e) {
+                this.search_form.stime = ''
+                this.search_form.etime = ''
+                this.load_sta_data()
+            },
+            async load_sta_data() {
+                if (!this.search_form.stime && !this.search_form.etime && !this.search_form.time_range) {
+                    this.$message({ message: '统计时间不能为空', type: 'error' })
+                    return
+                }
+                let loading = this.$loading()
+                $.get('/statistics/v_client_zhuanhualv_data', this.search_form, (res) => {
+                    loading.close()
+                    console.log('load_sta_data res', res)
+                    this.sta_data = res.data
+                })
+            },
+        }
+    });
+</script>
+
+<style lang="scss" scoped>
+    .el-card__body { padding: 6px; }
+    .el-radio-group{
+        label { margin-bottom: 0; }
+    }
+</style>

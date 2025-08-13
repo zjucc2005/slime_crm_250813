@@ -1,0 +1,12 @@
+//alert('<%= params.to_s.html_safe %>');
+
+$('#loadingModal .modal-dialog').attr('style', 'max-width: 1080px;')
+$('#loadingModal .modal-title').html('<%= @modal_title %>');
+$('#loadingModal .modal-body').html('<%= j(render :partial => @modal_body_form) %>');
+//$('button[data-target="#loadingModal"]').click();
+$('#loadingModal').modal('show');
+
+if($('.select2-container').length){
+    $('.select2-container').remove();
+}
+$('.select2').select2();

@@ -1,0 +1,96 @@
+<% @candidates.each do |candidate| %>
+
+<div id="cid_<%= candidate.id %>" class="card card-candidate mb-1">
+    <div class="row">
+        <div class="col-lg-4 d-flex flex-column text-center text-md-left">
+            <div class="d-flex flex-column flex-lg-row align-items-center mb-1">
+                <div class="candidate-checkbox">
+                    <%= check_box_tag :'uids[]', candidate.id, false, :class => 'checkbox-square' %>
+                </div>
+                <div class="text-center mr-3 mb-1 mb-lg-0">
+                    <span class="text-smaller text-gray"><%= "# #{ candidate.uid }" %></span>
+                </div>
+                <div class="text-center mr-3 mb-1 mb-lg-0">
+                    <div class="d-inline mr-2">
+                        <%= render partial: 'candidates/widgets/is_available_dropdown', locals: { candidate: candidate } %>
+                    </div>
+                    <%= link_to candidate_path(candidate), :target => '_blank' do %>
+                        <span><%= candidate.name %></span>
+                    <% end %>
+                </div>
+
+            </div>
+
+            <div class="d-flex flex-column mb-1">
+                <div class="text-smaller">
+                    <span class="mr-1 text-light roundy px-1 py-0 <%= cps_bg(candidate.cpt) %>"><%= "#{currency_symbol(candidate.currency)}#{candidate.cpt}" %></span>
+                    <span class="text-gray mr-1">/</span>
+                    <span class="mr-1"><%= candidate.city || '-' %></span>
+                    <span class="text-gray mr-1">/</span>
+                    <%= content_tag :span, :id => "show_phone_wrapper_#{candidate.id}", :class => 'mr-1' do %>
+                        <%= link_to '查看联系方式', show_phone_candidate_path(candidate), :remote => true %>
+                    <% end %>
+                </div>
+            </div>
+
+            <div class="d-flex flex-column text-left">
+                <% candidate.experiences.work.order(:started_at => :desc).limit(3).each do |exp| %>
+                    <div class="text-smaller">
+                        <span class="text-gray mr-1"><%= exp.friendly_timestamp('%Y-%m') %></span>
+                        <span class="mr-1" title="<%= exp.org_cn %>"><%= hl(truncate(exp.org_cn, length: 11), @hl_words) %></span>
+                        <span title="<%= exp.title %>"><%= hl(truncate(exp.title, length: 9), @hl_words) %></span>
+                    </div>
+                <% end %>
+            </div>
+        </div>
+        <div class="col-lg-4 d-flex flex-column text-left">
+            <div class="my-3 my-lg-0 text-smaller" title="<%#= candidate.description %>">
+                <%= hl(truncate(candidate.description, length: 150), @hl_words) %>
+            </div>
+        </div>
+        <div class="col-lg-4 d-flex flex-column text-left">
+            <div class="text-smaller">
+                <span>访谈次数： </span>
+                <span><%= normal_project_task_count(candidate) %></span>，
+                <span>最近访谈时间： </span>
+                <span><%= user_channel_filter(candidate.project_tasks.where(status: 'finished')).maximum(:started_at).strftime('%F %H:%M') rescue nil %></span>
+            </div>
+            <% call_record = user_channel_filter(candidate.call_records).order(:updated_at => :desc).first %>
+            <% if call_record %>
+                <div class="text-smaller" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<%= call_record.memo %>">
+                    <span class="text-gray mr-1"><%= call_record.last_logged_at.strftime('%F') %></span>
+                    <span>[<%= call_record.operator.name_cn %>]</span>
+                    <%= call_record_status_badge(call_record.status) %>
+                    <span><%= truncate(call_record.memo, length: 20) %></span>
+                </div>
+            <% end %>
+            <% candidate.comments.joins(:creator).where('users.user_channel_id': current_user.user_channel_id).order(:is_top => :desc, :created_at => :desc).limit(2).each do |comment| %>
+                <div class="text-smaller" title="<%= comment.content %>">
+                    <span class="text-gray mr-1"><%= comment.created_at.strftime('%F') %></span>
+                    <span>[<%= comment.creator.name_cn %>]</span>
+                    <span><%= content_tag(:i, nil, :class => 'fa fa-flag text-red') if comment.is_top? %><%= truncate(comment.content, length: 20) %></span>
+                </div>
+            <% end %>
+
+            <div class="dropdown">
+                <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                    <%= fa_icon_tag('cog') %> <%= t(:operation) %>
+                </button>
+                <div class="dropdown-menu">
+                    <%= link_to 'javascript:void(0);', onclick: "loadingModal('newCallRecord',#{candidate.id})", class: 'dropdown-item text-smaller' do %>
+                        <i class="fa fa-phone"></i> <%= t('action.add_model', model: mt(:call_record)) %>
+                    <% end %>
+                    <%= link_to new_candidate_comment_path(candidate_id: candidate.id, return_to: "#{request.url}#cid_#{candidate.id}"), :class => 'dropdown-item text-smaller' do %>
+                        <i class="fa fa-commenting"></i> <%= t('action.add_model', model: mt(:candidate_comment)) %>
+                    <% end if false # can?(:new, CandidateComment) %>
+                    <%= link_to 'javascript:void(0);', disabled: true, class: 'dropdown-item text-smaller text-secondary', onclick: "alert('已禁用;')" do %>
+                        <i class="fa fa-commenting"></i> <%= t('action.add_model', model: mt(:candidate_comment)) %>
+                    <% end %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% end %>
+<%= will_paginate @candidates %>

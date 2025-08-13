@@ -1,0 +1,39 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('tasks') %> <%= mt(:project_requirement) %></h5>
+        <%= link_to fa_icon_tag('close'), return_to(project_requirements_path), :class => 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <div class="row">
+            <div class="col-12 form-group">
+                <%= project_requirement_status_badge(@project_requirement.status) %>
+                <span class="badge badge-light"><%= show_creator(@project_requirement) %></span>
+                <span class="badge badge-light"><%= show_timestamps(@project_requirement) %></span>
+            </div>
+
+            <div class="col-12 col-md-6 form-group">
+                <%= label_tag :project, mt(:project) %>
+                <%= text_field_tag :project, @project_requirement.project.name, :class => 'form-control', :readonly => true %>
+            </div>
+            <div class="col-12 col-md-6 form-group">
+                <%= label_tag :operator, mt(:project_requirement, :operator) %>
+                <%= text_field_tag :operator, (@project_requirement.operator.uid_name rescue nil), :class => 'form-control', :readonly => true %>
+            </div>
+            <div class="col-12 form-group">
+                <%= label_tag :content, mt(:project_requirement, :content) %>
+                <%= text_area_tag :content, @project_requirement.content, :rows => [5, @project_requirement.content.to_s.split("\n").length].max,
+                                  :class => 'form-control', :readonly => true %>
+            </div>
+            <div class="col-12 form-group">
+                <%= label_tag :demand_number, mt(:project_requirement, :demand_number) %>
+                <%= text_field_tag :demand_number, @project_requirement.demand_number, :class => 'form-control', :readonly => true %>
+            </div>
+
+            <div class="col-12 form-group">
+                <%= label_tag :file, mt(:project_requirement, :file) %>
+                <%= link_to @project_requirement.file.url do %><%= fa_icon_tag('download') %> <%= @project_requirement.file.identifier %><% end if @project_requirement.file.present? %>
+            </div>
+        </div>
+    </div>
+</div>

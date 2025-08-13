@@ -1,0 +1,117 @@
+<div class="row">
+    <div class="col-lg-3 col-6 mb-3">
+        <div class="card summary-item">
+            <div class="symbol blue">
+                <%= fa_icon_tag('user-circle') %>
+            </div>
+            <div class="value">
+                <h1 class="count"><%= @total_experts %></h1>
+                <p><%= t('dashboard.total_my_experts') %></p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6 mb-3">
+        <div class="card summary-item">
+            <div class="symbol red">
+                <%= fa_icon_tag('tags') %>
+            </div>
+            <div class="value">
+                <h1 class="count"><%= @total_tasks %></h1>
+                <p><%= t('dashboard.total_my_tasks') %></p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6 mb-3">
+        <div class="card summary-item">
+            <div class="symbol purple">
+                <%= fa_icon_tag('clock-o') %>
+            </div>
+            <div class="value">
+                <h1 class="count"><%= @total_charge_duration_hour %></h1>
+                <p><%= t('dashboard.total_charge_duration_hour') %></p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6 mb-3">
+        <div class="card summary-item">
+            <div class="symbol green">
+                <%= fa_icon_tag('bell-o') %>
+            </div>
+            <div class="value">
+                <h1 class="count"><%= current_user.candidate_access_logs.today.count %></h1>
+                <p><%= mt(:user, :candidate_access_count) %></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="app" class="mb-3">
+    <el-card shadow="never" >
+        <el-row :gutter="20" v-loading="card_loading">
+            <el-col :span="4">
+                <el-statistic title="总项目数" :value="ongoing_sta.sum_project">
+                    <template #title>
+                        <el-tag type="success" size="mini">进展中</el-tag>总项目数
+                    </template>
+                </el-statistic>
+            </el-col>
+            <el-col :span="4">
+                <el-statistic title="总需求量" :value="ongoing_sta.sum_demand"></el-statistic>
+            </el-col>
+            <el-col :span="4">
+                <el-statistic title="已推荐" :value="ongoing_sta.sum_recommended"></el-statistic>
+            </el-col>
+            <el-col :span="4">
+                <el-statistic title="确认中" :value="ongoing_sta.sum_hold"></el-statistic>
+            </el-col>
+            <el-col :span="4">
+                <el-statistic title="已约访" :value="ongoing_sta.sum_succ"></el-statistic>
+            </el-col>
+            <el-col :span="4">
+                <el-statistic title="转化率" :value="ongoing_sta.zhuanhualv * 100" suffix="%"></el-statistic>
+            </el-col>
+        </el-row>
+    </el-card>
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            card_loading: false,
+            ongoing_sta: {
+                sum_project: 0,
+                sum_demand: 0,
+                sum_recommended: 0,
+                sum_hold: 0,
+                sum_succ: 0,
+                zhuanhualv: 0
+            }
+        },
+        mounted() {
+            this.load_ongoing_sta()
+        },
+        methods: {
+            async load_ongoing_sta() {
+                this.card_loading = true
+                $.get('/statistics/v_ongoing_sta', (res) => {
+                    console.log('res', res)
+                    this.card_loading = false
+                    this.ongoing_sta = res.data
+                })
+            },
+            debug() {
+                console.log('this.$data', this.$data)
+            }
+        }
+    })
+</script>
+
+<style lang="scss" scoped>
+    .el-statistic {
+        .head {
+            color: #606266;
+            font-size: 13px;
+        }
+    }
+</style>

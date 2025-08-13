@@ -1,0 +1,304 @@
+<div class="badge badge-danger mb-3 px-4"><%= t(:charge_info) %></div>
+<div class="row border-bottom mb-3">
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :category %><span class="text-red">*</span>
+        <%= f.text_field :category, :value => ProjectTask::CATEGORY[@project_task.category], :disabled => true, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :expert, mt(:expert) %><span class="text-red">*</span>
+        <%= f.text_field :expert_id, :value => @project_task.expert.uid_name, :disabled => true, :class => 'form-control' %>
+    </div>
+    <!--
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :client, t(:client_contact) %><span class="text-red">*</span>
+        <%= f.text_field :client_id, :value => @project_task.client.uid_name, :disabled => true, :class => 'form-control' %>
+    </div>
+    -->
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :client, t(:client_contact) %><span class="text-red">*</span>
+        <%= f.select :client_id, project_task_client_options, { :include_blank => false }, :class => 'form-control select2' %>
+    </div>
+    <!--
+    <div class="col-lg-3 col-12 form-group">
+        <%#= f.label :pm %><span class="text-red">*</span>
+        <%#= f.text_field :pm_id, :value => @project_task.pm.uid_name, :disabled => true, :class => 'form-control' %>
+    </div>
+    -->
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :pm %><span class="text-red">*</span>
+        <%= f.select :pm_id, project_task_pm_options, { :include_blank => false }, :class => 'form-control select2' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :interview_form %><span class="text-red">*</span>
+        <%= f.select :interview_form, ProjectTask::INTERVIEW_FORM.to_a.map(&:reverse), { :prompt => default_prompt },
+                     :required => true, :class => 'form-control select2' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :started_at %><span class="text-red">*</span>
+        <%= f.text_field :started_at, :value => @project_task.started_at.strftime('%F %H:%M'), :required => true, :class => 'form-control datetimepicker' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :expert_level %><span class="text-red">*</span>
+        <%= f.select :expert_level, ProjectTask::EXPERT_LEVEL.to_a.map(&:reverse), {}, :class => 'form-control select2' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :expert_rate do %>
+            <%= mt(:project_task, :expert_rate) %>
+            <i class="fa fa-refresh"></i>
+            <%= mt(:contract, :charge_rate) %> * <%= mt(:project_task, :expert_rate) %>
+        <% end %>
+        <span class="text-red">*</span>
+        <div class="form-group-range">
+            <div class="form-group-range-input">
+                <%= f.text_field :expert_rate, value: @project_task.expert_rate || 1, required: true, readonly: true, class: 'form-control' %>
+            </div>
+            <div class="form-group-range-divider">
+                <i class="fa fa-refresh"></i>
+            </div>
+            <div class="form-group-range-input">
+                <%= hidden_field_tag :charge_rate, @project_task.charge_rate_realtime, readonly: true %>
+                <%= text_field_tag :charge_rate_mod, (@project_task.charge_rate_realtime * @project_task.expert_rate || 1).round, class: 'form-control' %>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :duration, mt(:project_task, :duration_min) %><span class="text-red">*</span>
+        <%= f.number_field :duration, :value => @project_task.duration || 0, :required => true, :min => 0, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :charge_duration, mt(:project_task, :charge_duration_min) %><span class="text-red">*</span>
+        <%= f.number_field :charge_duration, :value => @project_task.charge_duration || 0, :required => true, :min => 0, :class => 'form-control', :placeholder => '用于计算价格' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :f_flag %><span class="text-red">*</span>
+        <%= f.select :f_flag, boolean_options, {}, :class => 'form-control select2' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :base_price %><span class="text-red">*</span>
+        <%= f.text_field :base_price, :disabled => true, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :currency %><span class="text-red">*</span>
+        <%= f.text_field :currency, :disabled => true, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :actual_price %>
+        <%= f.number_field :actual_price, :min => 0, :step => 0.01, :class => 'form-control', :placeholder => '不填写则取基础收费' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :is_shorthand %><span class="text-red">*</span>
+        <%= f.select :is_shorthand, boolean_options, { :include_blank => false }, :class => 'form-control select2' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :shorthand_price %>
+        <%= f.text_field :shorthand_price, :disabled => true, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :recruitment_fee %>
+        <%= f.number_field :recruitment_fee, class: 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :is_taxed %>
+        <%= f.text_field :is_taxed, :disabled => true, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :tax_rate %>
+        <%= text_field_tag :tax_rate, nil, :disabled => true, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :tax %>
+        <%= f.text_field :tax, :disabled => true, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :is_recorded %><span class="text-red">*</span>
+        <%= f.select :is_recorded, boolean_options, { :include_blank => false }, :class => 'form-control select2' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :interview_no %>
+        <%= f.text_field :interview_no, class: 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :expert_alias %>
+        <%= f.text_field :expert_alias, class: 'form-control' %>
+    </div>
+    
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :candidate_experience_id, '前任公司' %>
+        <%= f.select :candidate_experience_id, @project_task.expert.work_experiences.pluck(:org_cn, :id), { include_blank: default_prompt }, class: 'form-control select2' %>
+    </div>
+    <div class="col-lg-3 col-12 form-group">
+        <%= f.label :notice_email %>
+        <%= submit_tag t('action.preview'), class: 'btn btn-link btn-xs' %>
+        <% if @project_task.notice_email_sent_at.nil? %>
+            <%= submit_tag t('action.send_out'), class: 'btn btn-link btn-xs', data: { confirm: '确认发送吗?' } %>
+            <%= f.select :notice_email, ProjectTask::NOTICE_EMAIL.to_a.map(&:reverse), { include_blank: default_prompt }, class: 'form-control select2' %>
+        <% else %>
+            <%= content_tag :span, t('action.sent_out'), class: 'text-gray text-smaller' %>
+            <%= f.text_field :notice_email, value: ProjectTask::NOTICE_EMAIL[@project_task.notice_email], disabled: true, class: 'form-control' %>
+        <% end %>
+    </div>
+    <div class="col-lg-9 col-12 form-group">
+        <%= f.label :memo %>
+        <%= f.text_field :memo, :class => 'form-control' %>
+    </div>
+    <div id="jiesuan_file" class="col-lg-6 col-12 form-group">
+        <%= f.label :jiesuan_file %>
+        <el-image
+            ref="previewBtn"
+            :src="srcList[0]"
+            style="width: 0; height: 0;"
+            :preview-src-list="srcList">
+            预览
+        </el-image>
+        <el-link type="primary" @click="handleJiesuanPreview">预览</el-link>
+        <el-upload
+            action="#"
+            :http-request="handleJiesuanUpload"
+            :on-preview="handleJiesuanPreview"
+            :on-remove="handleJiesuanRemove"
+            :file-list="jiesuan_files"
+            :limit="5"
+            list-type="picture"
+        >
+            <el-button size="small" type="primary">点击上传</el-button>
+            <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>
+        </el-upload>
+    </div>
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#jiesuan_file',
+        data: {
+            project_task_id: <%= @project_task.id %>,
+            jiesuan_files: <%= @project_task.jiesuan_files.map { |f| { name: f.identifier, url: f.url} }.to_json.html_safe %>,
+            srcList: <%= @project_task.jiesuan_files.map(&:url).to_json.html_safe %>
+        },
+        methods: {
+            handleJiesuanUpload (ele) {
+                let _this_ = this;
+                let formData = new FormData();
+                formData.append('file', ele.file)
+                // console.log("handleJiesuanUpload", ele)
+                $.ajax({
+                    type: 'POST',
+                    url: `/project_tasks/${this.project_task_id}/v_upload_jiesuan_file`,
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(res) {
+                        if (res.status == 0) {
+                            _this_.$message({ message: '上传结算图片成功', type: 'success' })
+                        } else if (res.status == 1) {
+                            _this_.$message({ message: res.msg, type: 'error' })
+                        }
+                    }
+                })
+            },
+            handleJiesuanPreview (file) {
+                this.$refs.previewBtn.showViewer = true
+                console.log('handleJiesuanPreview', this.$refs)
+            },
+            handleJiesuanRemove (file, fileList) {
+                console.log('handleJiesuanRemove', file, fileList)
+                let _this_ = this;
+                $.ajax({
+                    type: 'POST',
+                    url: `/project_tasks/${this.project_task_id}/v_remove_jiesuan_file`,
+                    data: { filename: file.name },
+                    success: function(res) {
+                        console.log('res', res)
+                        if (res.status == 0) {
+                            _this_.$message({ message: '删除结算图片成功', type: 'success' })
+                        } else if (res.status == 1) {
+                            _this_.$message({ message: res.msg, type: 'error' })
+                        }
+                    }
+                })
+            }
+        }
+    });
+
+    $(function(){
+        get_expert_rate();
+    });
+    $('#project_task_charge_duration').change(function(){
+        get_base_price(); // 计算价格
+    });
+    $('#project_task_expert_rate').change(function(){
+        let expert_rate = $('#project_task_expert_rate')[0];
+        let charge_rate = $('#charge_rate')[0];
+        let charge_rate_mod = $('#charge_rate_mod')[0];
+        charge_rate_mod.value = Math.round(charge_rate.value * expert_rate.value);
+        get_base_price();
+    });
+    $('#charge_rate_mod').change(function(){
+        let expert_rate = $('#project_task_expert_rate')[0];
+        let charge_rate = $('#charge_rate')[0];
+        let charge_rate_mod = $('#charge_rate_mod')[0];
+        expert_rate.value = charge_rate_mod.value / charge_rate.value;
+        get_base_price();
+    } );
+    $('#project_task_actual_price').change(function(){
+        get_base_price();
+    });
+    $('#project_task_f_flag').change(function(){
+        get_base_price();
+    });
+    $('#project_task_is_shorthand').change(function(){
+        get_base_price();
+    });
+    $('#project_task_expert_level').change(function(){
+        get_expert_rate();
+    });
+    function get_base_price(){
+        let expert_rate = $('#project_task_expert_rate').val();
+        let charge_duration = $('#project_task_charge_duration').val();
+        let f_flag = $('#project_task_f_flag').val();
+        let is_shorthand = $('#project_task_is_shorthand').val();
+        let base_price = $('#project_task_base_price');
+        let shorthand_price = $('#project_task_shorthand_price');
+        let recruitment_fee = $('#project_task_recruitment_fee');
+        let currency = $('#project_task_currency');
+        let is_taxed = $('#project_task_is_taxed');
+        let tax_rate = $('#tax_rate');
+        let tax = $('#project_task_tax');
+        let actual_price = $('#project_task_actual_price');
+        $.ajax({
+            type: 'get',
+            url: '/project_tasks/' + <%= @project_task.id %> + '/get_base_price',
+            data: { duration: charge_duration, expert_rate: expert_rate, f: f_flag, is_shorthand: is_shorthand },
+            async: false,
+            dataType: 'json',
+            success: function(data){
+                base_price.val(data.price);
+                shorthand_price.val(data.shorthand_price);
+                currency.val(data.currency);
+                is_taxed.val(data.is_taxed);
+                tax_rate.val(data.tax_rate);
+                if (!recruitment_fee.val()) recruitment_fee.val(data.recruitment_fee);
+                let _actual_price = actual_price.val() ? parseFloat(actual_price.val()) : parseFloat(base_price.val())
+                tax.val((_actual_price + parseFloat(data.shorthand_price) + parseFloat(data.recruitment_fee || 0)) * parseFloat(tax_rate.val()));
+            }
+        })
+    }
+
+    function get_expert_rate(){
+        let expert_level = $('#project_task_expert_level')[0];
+        let expert_rate = $('#project_task_expert_rate')[0];
+        let charge_rate = $('#charge_rate')[0];
+        let charge_rate_mod = $('#charge_rate_mod')[0];
+        if(expert_level.value == 'standard'){
+            expert_rate.readOnly = true;
+            expert_rate.value = 1;
+            charge_rate_mod.readOnly = true;
+            charge_rate_mod.value = charge_rate.value;
+        }else if(expert_level.value == 'premium'){
+            expert_rate.readOnly = false;
+            charge_rate_mod.readOnly = false;
+        }
+        get_base_price();
+    }
+
+</script>

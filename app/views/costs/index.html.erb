@@ -1,0 +1,46 @@
+<%= render partial: 'costs/widgets/nav', locals: { active: 1 } %>
+
+<div class="card p-2 mb-2">
+    <div class="d-flex flex-row justify-content-between mb-2 pb-2 border-bottom">
+        <%= link_to v_summary_new_costs_path, class: 'btn btn-sm btn-primary' do %>
+            <%= t('action.new_model', model: mt(:cost_summary)) %> <i class="fa fa-arrow-right"></i>
+        <% end %>
+    </div>
+    <% if @cost_summaries.present? %>
+        <table class="table table-sm table-striped nowrap card-text">
+            <thead>
+            <tr>
+                <th><%= check_box_tag :selectAll, nil, nil, onclick: 'selectAll(this);' %></th>
+                <th><%= mt(:cost_summary, :id) %></th>
+                <th><%= mt(:cost_summary, :datetime) %></th>
+                <th><%= mt(:cost_summary, :price) %></th>
+                <th><%= mt(:cost_summary, :operator) %></th>
+                <th><%= mt(:cost_summary, :created_at) %></th>
+                <th class="action"><%= t(:operation) %></th>
+            </tr>
+            </thead>
+            <tbody>
+            <% @cost_summaries.each do |s| %>
+                <tr>
+                    <td><%= check_box_tag :'uids[]', s.id, false %></td>
+                    <td><%= content_tag :span, "# #{s.uid}", class: 'text-gray' %></td>
+                    <td><%= s.datetime.strftime('%Y-%m') %></td>
+                    <td><%= s.price %></td>
+                    <td><%= s.operator.try(:name_cn) %></td>
+                    <td><%= s.created_at.strftime('%F %T') %></td>
+                    <td class="action">
+                        <%= link_to v_summary_edit_costs_path(cost_summary_id: s.id), class: 'btn btn-dark btn-xs' do %>
+                            <i class="fa fa-edit"></i> <%= t('action.edit') %>
+                        <% end %>
+                    </td>
+                </tr>
+            <% end %>
+            </tbody>
+        </table>
+        <%= will_paginate @cost_summaries %>
+    <% else %>
+        <div class="p-4 text-center">
+            <h5 class="text-gray mb-0"><%= t(:not_found) %></h5>
+        </div>
+    <% end %>
+</div>

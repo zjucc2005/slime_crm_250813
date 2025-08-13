@@ -1,0 +1,7 @@
+<% if @project_candidate.category == 'client' %>
+<% @project_candidate.project.project_candidates.client.each do |item| %>
+$('#pcm_' + <%= item.id %>).html('<%= project_candidate_mark_badge(item.mark) %>');
+<% end %>
+<% else %>
+$('#pcm_' + <%= @project_candidate.id %>).html('<%= project_candidate_mark_badge(@project_candidate.mark) %>');
+<% end %>

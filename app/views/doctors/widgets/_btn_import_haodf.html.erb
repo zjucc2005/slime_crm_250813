@@ -1,0 +1,28 @@
+<%= button_tag :type => 'button', :class => 'btn btn-warning', :data => { :toggle => 'modal', :target => '#importExpertModal'}    do %>
+        <%= fa_icon_tag('eject') %> <%= t(:import_haodf) %>
+<% end if can?(:import_haodf, Doctor) %>
+
+<div class="modal fade" id="importExpertModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"><%= model_icon('Doctor') %> <%= t(:import_haodf) %></h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+
+            <%= form_tag import_haodf_doctors_path, :method => :post, :multipart => true do %>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>选择Excel文件</label>
+                        <%= file_field_tag :file, :required => true, :class => 'form-control-file' %>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal"><%= t('action.close') %></button>
+                    <%= submit_tag t('action.submit'), :class => 'btn btn-primary' %>
+                </div>
+            <% end %>
+        </div>
+    </div>
+</div>

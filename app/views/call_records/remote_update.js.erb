@@ -1,0 +1,7 @@
+$('#loadingModal').modal('hide');
+<% if @error.present? %>
+alert('<%= @error %>');
+<% else %>
+$("#project_<%= @project.id %>>.tab-body").html('<%= j(render partial: 'remote_index', locals: { call_records: @call_records, project_id: @project.id }) %>');
+$("#project_<%= @project.id %>>.tab-body [data-toggle='popover']").popover();
+<% end %>

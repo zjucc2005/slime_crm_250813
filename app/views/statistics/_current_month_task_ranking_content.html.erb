@@ -1,0 +1,22 @@
+<table class="table table-sm card-text border-bottom">
+    <thead>
+    <tr>
+        <th class="pl-3"><%= t('dashboard.ranking') %></th>
+        <th><%= mt(:user, :name_cn) %></th>
+        <th><%= t('dashboard.interview_hour') %></th>
+        <th><%= t('dashboard.manage_hour') %></th>
+        <th><%= t('dashboard.new_expert_rate') %></th>
+    </tr>
+    </thead>
+    <tbody>
+    <% @current_month_task_ranking.each_with_index do |info, index| %>
+        <tr>
+            <th class="pl-3"><%= index + 1 %></th>
+            <td><%= info[:username] %></td>
+            <td><%= (info[:interview_minutes] / 60.0).round(1) %> h</td>
+            <td><%= (info[:manage_minutes] / 60.0).round(1) %> h</td>
+            <td><%= (info[:new_expert_rate] * 100).round(1) %> %</td>
+        </tr>
+    <% end %>
+    </tbody>
+</table>

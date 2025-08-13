@@ -1,0 +1,17 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('map') %> <%= t('action.edit', :model => mt(:project)) %></h5>
+        <%= link_to fa_icon_tag('close'), project_path(@project), :class => 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <%= form_for @project do |f| %>
+            <%= render :partial => 'form', :locals => { :f => f } %>
+
+            <div class="form-group mb-0">
+                <%= f.submit t('action.submit'), :class => 'btn btn-submit' %>
+                <%= link_to t('action.back'), project_path(@project), :class => 'btn btn-back' %>
+            </div>
+        <% end %>
+    </div>
+</div>

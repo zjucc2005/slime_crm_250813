@@ -1,0 +1,155 @@
+<div class="row">
+    <div class="col-lg-6 col-12">
+        <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <a class="nav-link" data-toggle="pill" href="#table_<%= @date %>">表格</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" data-toggle="pill" href="#chart_<%= @date %>">图表</a>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane tab-container" id="table_<%= @date %>">
+                <% if @org_ranking.present? %>
+                    <p class="text-danger">NOTE! 鼠标点击表格的行,切换背景色</p>
+                    <table class="table table-sm table-bordered nowrap card-text text-center text-bold" style="font-size: 1.2rem;">
+                        <thead>
+                        <tr>
+                            <th colspan="3" class="border-dark p-3" style="font-size: 1.4rem;"><i>奋战40天智慧大额存单销售数据分析日报（<%= Time.parse(@date).strftime('%m.%d') %>）</i></th>
+                        </tr>
+                        <tr>
+                            <th class="border-dark">机构</th>
+                            <th class="border-dark">当日销量(万元)</th>
+                            <th class="border-dark">当日出单笔数</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <% @org_ranking.each_with_index do |item, index| %>
+                            <% if (0..2).include?(index) %>
+                                <% className = 'table-danger' %>
+                            <% elsif item[:sale_value].zero? || (@org_ranking.length-3..@org_ranking.length-1).include?(index) %>
+                                <% className = 'table-success' %>
+                            <% else %>
+                                <% className = 'table-warning' %>
+                            <% end %>
+                            <tr onclick="changeBgColor(this);" class="<%= className %>">
+                                <td class="border-dark"><%= item[:org_name] %></td>
+                                <td class="border-dark"><%= item[:sale_value] %></td>
+                                <td class="border-dark"><%= item[:bill_count] %></td>
+                            </tr>
+                        <% end %>
+                        <tr>
+                            <td class="border-dark">总计</td>
+                            <td class="border-dark"><%= @org_ranking.sum{|item| item[:sale_value]} %></td>
+                            <td class="border-dark"><%= @org_ranking.sum{|item| item[:bill_count]} %></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                <% elsif @sum_ranking.present? %>
+                    <h3>奋战40天智慧大额存单位销售周报（<%= @period.map{|item| item.strftime('%m.%d')}.join('-') %>）</h3>
+                    <table class="table table-sm table-border-dark card-text text-center text-bold">
+                        <thead>
+                        <tr>
+                            <th>机构</th>
+                            <th>销量(万元)</th>
+                            <th>笔数</th>
+                            <th>出单人数</th>
+                            <th>总人数</th>
+                            <th>人员参与率</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <% @sum_ranking.sort_by{|item| item[:staff_active_rate]}.reverse.each do |item| %>
+                            <tr>
+                                <td><%= item[:org_name] %></td>
+                                <td><%= item[:sale_value] %></td>
+                                <td><%= item[:bill_count] %></td>
+                                <td><%= item[:staff_active] %></td>
+                                <td><%= item[:staff_total] %></td>
+                                <td><%= "#{(item[:staff_active_rate] * 100).round(2)}%" %></td>
+                            </tr>
+                        <% end %>
+                        <tr>
+                            <td>总计</td>
+                            <td><%= @sum_ranking.sum{|item| item[:sale_value]} %></td>
+                            <td><%= @sum_ranking.sum{|item| item[:bill_count]} %></td>
+                            <td><%= @sum_ranking.sum{|item| item[:staff_active]} %></td>
+                            <td><%= @sum_ranking.sum{|item| item[:staff_total]} %></td>
+                            <td><%= "#{(@sum_ranking.sum{|item| item[:staff_active]} * 100.0 / @sum_ranking.sum{|item| item[:staff_total]}).round(2)}%" %></td>
+                        </tr>
+                        <tr style="text-align: left;">
+                            <td colspan="6">
+                                销量方面：排名前三<%= @sum_ranking.sort_by{|item| item[:sale_value]}.map{|item| item[:org_name]}.reverse[0,3].join('、') %>，
+                                排名后三<%= @sum_ranking.sort_by{|item| item[:sale_value]}.map{|item| item[:org_name]}[0,3].join('、') %>；
+                                <%= @sum_ranking.select{|item| item[:sale_value].zero? }.map{|item| item[:org_name]}.reverse.join('、') %>暂无销量；
+                                笔数参与度方面：排名前三的是<%= @sum_ranking.sort_by{|item| item[:bill_count]}.map{|item| item[:org_name]}.reverse[0,3].join('、') %>，
+                                排名后三<%= @sum_ranking.sort_by{|item| item[:bill_count]}.map{|item| item[:org_name]}[0,3].join('、') %>；
+                                人数参与度方面：排名前三<%= @sum_ranking.sort_by{|item| item[:staff_active]}.map{|item| item[:org_name]}.reverse[0,3].join('、') %>，
+                                排名后三<%= @sum_ranking.sort_by{|item| item[:staff_active]}.map{|item| item[:org_name]}[0,3].join('、') %>；
+                                以上为本周大额存单销售情况，供各支行领导参阅及营销推动，数据如有遗漏，请与我联系。明日将销售明细转发各机构负责人及零售分管行长邮箱。
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                <% end %>
+            </div>
+            <div class="tab-pane tab-container active" id="chart_<%= @date %>">
+                <% if @org_ranking.present? %>
+                    <%= render partial: 'czbank/xibao_list/chart_daily' %>
+                <% elsif @sum_ranking.present? %>
+                    <%= render partial: 'czbank/xibao_list/chart_sum' %>
+                <% end %>
+            </div>
+        </div>
+    </div>
+    <div class="col-6">
+        <ul class="nav nav-tabs border-bottom-0">
+            <li class="nav-item">
+                <a class="nav-link active" data-toggle="pill" href="#detail_<%= @date %>">明细 - 共 <%= @xibao_list.count %> 条数据</a>
+            </li>
+        </ul>
+        <table class="table table-sm table-bordered table-striped nowrap card-text">
+            <thead>
+            <tr>
+                <th>归属机构</th>
+                <th>绩效认领人</th>
+                <th>交易时间</th>
+                <th>交易金额(万元)</th>
+                <th>笔数</th>
+                <th>下载喜报</th>
+                <th class="action"><%= t(:operation) %></th>
+            </tr>
+            </thead>
+            <tbody>
+            <% @xibao_list.each do |instance| %>
+                <tr>
+                    <td><%= instance.org_name %></td>
+                    <td><%= instance.staff_name %></td>
+                    <td><%= instance.trans_date.strftime('%F %T.%6N') %></td>
+                    <td><%= instance.sale_value %></td>
+                    <td>
+                        <%= content_tag :span, instance.bill_count, class: instance.bill_count == 1 ? '' : 'text-bold text-danger' %>
+                    </td>
+                    <td>
+                        <%#= instance.dl_count > 0 ? '是' : '否' %>
+                        <%= link_to xibao_gen_pic_czbank_index_path(instance.to_api), class: 'btn btn-danger btn-xs' do %>
+                            生成喜报 <i class="fa fa-angle-right"></i>
+                        <% end %>
+                    </td>
+                    <td class="action">
+                        <div class="btn-group">
+                            <%= link_to 'javascript:void(0);', onclick: "utilsLoadingModal({op: 'editCallRecord', id: #{1}})", class: 'btn btn-edit btn-xs' do %>
+                                <i class="fa fa-edit"></i> <%= t('action.update') %>
+                            <% end if false %>
+                            <%= link_to 'remote_delete_call_record_path(call_record)', method: :post, remote: true, class: 'btn btn-danger btn-xs', data: { confirm: t(:sure_to_delete)} do %>
+                                <i class="fa fa-trash"></i> <%= t('action.delete') %>
+                            <% end if false %>
+                        </div>
+                    </td>
+                </tr>
+            <% end %>
+            </tbody>
+        </table>
+    </div>
+</div>

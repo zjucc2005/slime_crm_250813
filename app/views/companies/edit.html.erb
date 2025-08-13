@@ -1,0 +1,17 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('bank') %> <%= t('action.edit_model', :model => mt(:company)) %></h5>
+        <%= link_to fa_icon_tag('close'), company_path(@company), :class => 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <%= form_for @company, :html => { :multipart => true } do |f| %>
+            <%= render :partial => 'form', :locals => { :f => f } %>
+
+            <div class="form-group mb-0">
+                <%= f.submit t('action.save'), :class => 'btn btn-primary' %>
+                <%= link_to t('action.back'), company_path(@company), :class => 'btn btn-secondary' %>
+            </div>
+        <% end %>
+    </div>
+</div>

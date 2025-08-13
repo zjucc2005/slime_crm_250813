@@ -1,0 +1,9 @@
+<!-- DEPRECATED -->
+<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+    <%= t(:project_billing_excel) %>
+</button>
+<div class="dropdown-menu">
+    <%= link_to export_billing_excel_project_path(@project, mode: 'iqvia_settlement'), :method => :post, :class => 'dropdown-item text-smaller' do %>
+        IQVIA结算模板
+    <% end %>
+</div>

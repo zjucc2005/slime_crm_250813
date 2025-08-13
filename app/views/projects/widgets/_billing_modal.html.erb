@@ -1,0 +1,40 @@
+<%= button_tag type: 'button', class: 'btn btn-success', data: { toggle: 'modal', target: '#billingModal'} do %>
+    <%= fa_icon_tag('file-text-o') %> <%= mt(:project, :billing) %>
+<% end %>
+
+<div id="billingModal" class="modal fade" tabindex="-1" data-keyboard="false" data-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"><%= mt(:project, :billing) %></h4>
+                <button type="button" data-dismiss="modal" class="close">&times;</button>
+            </div>
+
+            <%= form_tag billing_project_path(project), method: :post, multipart: true do %>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-lg-6 col-12 form-group">
+                            <%= label_tag :invoice_no, '发票号' %>
+                            <%= text_field_tag :invoice_no, nil, class: 'form-control' %>
+                        </div>
+                        <div class="col-lg-6 col-12 form-group">
+                            <%= label_tag :invoice_payment_date, '预计收款时间' %><span class="text-red">*</span>
+                            <%= text_field_tag :invoice_payment_date, nil, class: 'form-control datepicker', required: true %>
+                        </div>
+                        <div class="col-lg-6 col-12 form-group">
+                            <%= label_tag :invoice_amount, '发票金额' %><span class="text-red">*</span>
+                            <%= number_field_tag :invoice_amount, nil, min: 0, step: 0.01, class: 'form-control', required: true %>
+                        </div>
+                    </div>
+                    <%= label_tag :invoice_file, '发票附件' %><span class="text-red">*</span>
+                    <%= file_field_tag :invoice_file, class: 'form-control-file', required: true %>
+                    
+                </div>
+                <div class="modal-footer">
+                    <button type="button" data-dismiss="modal" class="btn btn-back"><%= t('action.close') %></button>
+                    <%= submit_tag t('action.submit'), class: 'btn btn-submit' %>
+                </div>
+            <% end %>
+        </div>
+    </div>
+</div>

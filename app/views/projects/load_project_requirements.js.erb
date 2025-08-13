@@ -1,0 +1,3 @@
+//$('select#ld_city_id').html('<%#= @city_options.html_safe %>');
+console.log('data:', '<%= @options.html_safe %>')
+$('select#call_record_project_requirement_id').html('<%= @options.to_json.html_safe %>');

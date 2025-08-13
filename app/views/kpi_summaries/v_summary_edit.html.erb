@@ -1,0 +1,12 @@
+<%= render partial: 'kpi_summaries/widgets/nav', locals: { active: 1 } %>
+
+<div class="card p-2 mb-2">
+    <div class="card-header">
+        <h5><%= t('action.edit_model', model: mt(:kpi_summary)) %></h5>
+        <%= link_to fa_icon_tag('arrow-left'), return_to(v_index_kpi_summaries_path), class: 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <%= render partial: 'v_summary_form' %>
+    </div>
+</div>

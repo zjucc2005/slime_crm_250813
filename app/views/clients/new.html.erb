@@ -1,0 +1,19 @@
+<div class="card">
+    <div class="card-header">
+        <h5><i class="fa fa-users"></i> <%= t('action.new_model', model: mt(:candidate, :seat)) %></h5>
+        <%= link_to fa_icon_tag('close'), return_to(clients_path), class: 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <%= form_for @client, url: clients_path, method: :post do |f| %>
+            <%= hidden_field_tag :return_to, params[:return_to] %>
+
+            <%= render partial: 'form', locals: { f: f } %>
+
+            <div class="form-group mb-0">
+                <%= f.submit t('action.save'), class: 'btn btn-submit' %>
+                <%= link_to t('action.back'), return_to(clients_path), class: 'btn btn-back' %>
+            </div>
+        <% end %>
+    </div>
+</div>

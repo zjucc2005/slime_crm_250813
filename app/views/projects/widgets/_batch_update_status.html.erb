@@ -1,0 +1,15 @@
+<% if can?(:batch_update_status, Project) %>
+<div class="d-inline-block">
+    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+        批量更新状态
+    </button>
+    <div class="dropdown-menu">
+        <%= link_to '', class: 'dropdown-item', onclick: "batchUpdateProjectStatus('finished');" do %>
+            <%= project_status_badge('finished') %>
+        <% end %>
+        <%= link_to '', class: 'dropdown-item', onclick: "batchUpdateProjectStatus('billed');" do %>
+            <%= project_status_badge('billed') %>
+        <% end %>
+    </div>
+</div>
+<% end %>

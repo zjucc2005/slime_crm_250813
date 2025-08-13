@@ -1,0 +1,18 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= model_icon('Doctor') %> <%= t('action.new_model', :model => mt(:doctor)) %></h5>
+        <%= link_to fa_icon_tag('close'), doctors_path, class: 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <%= form_for @doctor, url: doctors_path, html: { multipart: true, id: 'new_doctor' } do |f| %>
+            <%= render partial: 'form', locals: { f: f } %>
+
+            <div class="form-group mb-0">
+                <%= f.submit t('action.submit'), class: 'btn btn-submit' %>
+                <%= f.submit t('action.submit_and_call'), class: 'btn btn-success' %>
+                <%= link_to t('action.back'), doctors_path, class: 'btn btn-back' %>
+            </div>
+        <% end %>
+    </div>
+</div>

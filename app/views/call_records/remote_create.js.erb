@@ -1,0 +1,10 @@
+$('#loadingModal').modal('hide');
+<% if @error.present? %>
+alert('<%= @error %>');
+<% else %>
+$("form#new_call_record_<%= @project.id %> input[type=text]").val('');
+$("form#new_call_record_<%= @project.id %> select#call_record_status_<%= @project.id %>").val('pending').change();
+$("form#new_call_record_<%= @project.id %> select#call_record_project_requirement_<%= @project.id %>").val('').change();
+$("#project_<%= @project.id %>>.tab-body").html('<%= j(render partial: 'remote_index', locals: { call_records: @call_records, project_id: @project.id }) %>');
+$("#project_<%= @project.id %>>.tab-body [data-toggle='popover']").popover();
+<% end %>

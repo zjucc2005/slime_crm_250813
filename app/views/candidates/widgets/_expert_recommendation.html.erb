@@ -1,0 +1,10 @@
+<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" title="<%= t(:expert_recommendation) %>">
+  <%= fa_icon_tag('users') %>
+</button>
+<div class="dropdown-menu">
+    <div class="dropdown-header"><%= t(:expert_recommendation) %></div>
+    <%= link_to t('action.new'), new_candidate_path(recommender_id: candidate.id), :class => 'dropdown-item' %>
+    <%= link_to candidates_path(recommender_id: candidate.id, per_page: 100), :class => 'dropdown-item' do %>
+        <%= t(:expert_recommended) %> <%= count_badge(candidate.recommended_experts.count) %>
+    <% end %>
+</div>

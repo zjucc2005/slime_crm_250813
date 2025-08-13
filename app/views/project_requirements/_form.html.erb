@@ -1,0 +1,65 @@
+<%= model_error_tag(@project_requirement) %>
+
+<div class="row">
+    <div class="col-12 col-md-6 form-group">
+        <%= f.label :project, mt(:project) %><span class="text-red">*</span>
+        <%= f.select :project_id, project_options, { prompt: default_prompt }, required: true, class: 'form-control select2' %>
+    </div>
+    <div class="col-12 col-md-6 form-group">
+        <%= f.label :operator %><span class="text-red">*</span>
+        <%= f.select :operator_id, [], {}, required: true, class: 'form-control select2' %>
+    </div>
+    <div class="col-12 form-group">
+        <%= f.label :title %><span class="text-red">*</span>
+        <%= f.text_field :title, required: true, class: 'form-control' %>
+    </div>
+    <div class="col-12 form-group">
+        <%= f.label :content %><span class="text-red">*</span>
+        <%= f.text_area :content, required: true, rows: 5, class: 'form-control' %>
+    </div>
+    <div class="col-12 form-group">
+        <%= f.label :category, '需求类型' %><span class="text-red">*</span>
+        <%= f.select :category, ProjectRequirement::CATEGORIES, { prompt: default_prompt}, required: true, class: 'form-control select2' %>
+    </div>
+    <div class="col-12 form-group">
+        <%= f.label :demand_number %><span class="text-red">*</span>
+        <%= f.number_field :demand_number, min: 1, required: true, class: 'form-control' %>
+    </div>
+    <div class="col-12 form-group">
+        <%= f.label :file %>
+        <%= f.file_field :file, class: 'form-control-file' %>
+    </div>
+    <div class="col-12 form-group">
+        <%= f.label :file1 %>
+        <%= f.file_field :file1, class: 'form-control-file' %>
+    </div>
+    <div class="col-12 form-group">
+        <%= f.label :file2 %>
+        <%= f.file_field :file2, class: 'form-control-file' %>
+    </div>
+</div>
+
+<script>
+    $('#project_requirement_project_id').change(function(e){
+        load_operator_id(e.currentTarget.value);
+    });
+    function load_operator_id(project_id){
+        console.log('load_operator_id(' + project_id +')');
+        var ele = $('#project_requirement_operator_id');
+        var opt = [];
+        $.ajax({
+            type: 'GET',
+            url: '/projects/' + project_id + '/user_options',
+            dataType: 'json',
+            success: function(res){
+                console.log('res data:', res);
+                res.forEach(function(item){ opt.push('<option value="' + item[1] +'">' + item[0] + '</option>'); });
+                ele.html(opt.join(''));
+            },
+            error: function(e) {
+                console.log('error res:', e);
+                ele.html(opt.join(''));
+            }
+        })
+    }
+</script>

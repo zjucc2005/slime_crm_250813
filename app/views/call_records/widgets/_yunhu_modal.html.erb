@@ -1,0 +1,33 @@
+<%= button_tag type: 'button', class: 'btn btn-default', data: { :toggle => 'modal', target: '#yunhuModal'} do %>
+    <i class="fa fa-phone"></i> <%= content_tag :span, '云呼', :class => 'd-lg-inline d-none' %>
+<% end %>
+
+<div id="yunhuModal" class="modal fade">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"><i class="fa fa-phone"></i> 云呼</h4>
+                <button type="button" data-dismiss="modal" class="close">&times;</button>
+            </div>
+
+            <%= form_tag two_way_call_call_records_path, remote: true do %>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-lg-6 col-12 form-group">
+                            <%= label_tag :caller_number, '主叫号码' %>
+                            <%= text_field_tag :caller_number, current_user.phone, disabled: true, class: 'form-control' %>
+                        </div>
+                        <div class="col-lg-6 col-12 form-group">
+                            <%= label_tag :callee_number, '被叫号码' %><span class="text-red">*</span>
+                            <%= text_field_tag :callee_number, nil, required: true, class: 'form-control' %>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" data-dismiss="modal" class="btn btn-back"><%= t('action.close') %></button>
+                    <%= submit_tag '拨打', class: 'btn btn-submit' %>
+                </div>
+            <% end %>
+        </div>
+    </div>
+</div>

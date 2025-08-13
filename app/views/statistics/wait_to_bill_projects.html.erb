@@ -1,0 +1,12 @@
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <%= t('dashboard.wait_to_bill_projects') %>
+            <%= content_tag :span, @count, class: 'badge badge-danger' %>
+        </h5>
+        <%= link_to fa_icon_tag('close'), root_path, class: 'card-header-close' %>
+    </div>
+    <div class="card-body">
+        <%= render partial: 'wait_to_bill_projects_content' %>
+    </div>
+</div>

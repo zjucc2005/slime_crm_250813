@@ -1,0 +1,47 @@
+<div class="card card-inner mb-3">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('users') %> <%= mt(:user) %></h5>
+        <span>
+            <%= link_to users_path(project_id: @project.id, from_source: 'project_add_user', role: %w[admin pm pa], status: 'active'), :class => 'btn btn-primary btn-xs' do %>
+                <%= fa_icon_tag('plus') %> <%= t('action.add') %>
+            <% end if can?(:add_users, Project) && @can_operate && @project.can_edit? %>
+        </span>
+    </div>
+
+    <div class="card-body table_responsive">
+        <% if users.any? %>
+            <table class="table table-sm table-striped table-hover card-text">
+                <thead>
+                <tr>
+                    <th><%= mt(:user, :id) %></th>
+                    <th><%= mt(:user, :email) %></th>
+                    <th><%= mt(:user, :name_cn) %></th>
+                    <th><%= mt(:user, :role) %></th>
+                    <th class="action"><%= t(:operation) %></th>
+                </tr>
+                </thead>
+                <tbody>
+                <% users.each do |user| %>
+                    <tr>
+                        <td><%= link_to "# #{user.uid}", user_path(user), :class => 'text-gray' %></td>
+                        <td><%= link_to user.email, user_path(user), :target => '_blank' %></td>
+                        <td><%= user.name_cn %></td>
+                        <td><%= user_role_badge(user.role) %></td>
+                        <td class="action">
+                            <%= link_to delete_user_project_path(@project, user_id: user.id),
+                                        :method => :delete, :data => { :confirm => t(:sure_to_remove) },
+                                        :class => 'btn btn-danger btn-xs' do %>
+                                <%= fa_icon_tag('trash') %> <%= t('action.remove') %>
+                            <% end if can?(:delete_user, Project) && @can_operate && @project.can_edit? && @project.can_delete_user?(user, current_user) %>
+                        </td>
+                    </tr>
+                <% end %>
+                </tbody>
+            </table>
+        <% else %>
+            <div class="p-2 text-center">
+                <h5 class="text-gray mb-0"><%= t(:not_found) %></h5>
+            </div>
+        <% end %>
+    </div>
+</div>

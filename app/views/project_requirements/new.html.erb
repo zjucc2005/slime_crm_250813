@@ -1,0 +1,17 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('tasks') %> <%= t('action.new_model', :model => mt(:project_requirement)) %></h5>
+        <%= link_to fa_icon_tag('close'), project_requirements_path, :class => 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <%= form_for @project_requirement do |f| %>
+            <%= render :partial => 'form', :locals => { :f => f } %>
+
+            <div class="form-group mb-0">
+                <%= f.submit t('action.submit'), :class => 'btn btn-submit' %>
+                <%= link_to t('action.back'), project_requirements_path, :class => 'btn btn-back' %>
+            </div>
+        <% end %>
+    </div>
+</div>

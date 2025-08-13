@@ -1,0 +1,15 @@
+<%= form_tag remote_import_call_records_path(project_id: @project.id), method: :post, multipart: true, remote: true do %>
+    <div class="form-group">
+        <%= link_to '/templates/import_call_record_template.xlsx', class: 'btn btn-warning' do %>
+            <i class="fa fa-download"></i> 下载导入模板
+        <% end %>
+    </div>
+    <div class="form-group">
+        <label>选择Excel文件</label>
+        <%= file_field_tag :file, required: true, class: 'form-control-file' %>
+    </div>
+    <hr>
+    <div class="pull-right">
+        <%= submit_tag t('action.submit'), class: 'btn btn-primary' %>
+    </div>
+<% end %>

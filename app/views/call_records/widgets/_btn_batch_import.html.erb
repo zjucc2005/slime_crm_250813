@@ -1,0 +1,34 @@
+<%= button_tag :type => 'button', :class => 'btn btn-warning', :data => { :toggle => 'modal', :target => '#importModal'}    do %>
+    <%= fa_icon_tag('eject') %> <%= t(:batch_import) %>
+<% end %>
+
+<div class="modal fade" id="importModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"><%= t(:batch_import) %></h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+
+            <%= form_tag batch_import_call_records_path, :method => :post, :multipart => true do %>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <%= link_to '/templates/import_call_record_template.xlsx', :class => 'btn btn-warning' do %>
+                            <%= fa_icon_tag('download') %> 下载导入模板
+                        <% end %>
+                    </div>
+
+                    <div class="form-group">
+                        <label>选择Excel文件</label>
+                        <%= file_field_tag :file, :required => true, :class => 'form-control-file' %>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal"><%= t('action.close') %></button>
+                    <%= submit_tag t('action.submit'), :class => 'btn btn-primary' %>
+                </div>
+            <% end %>
+        </div>
+    </div>
+</div>

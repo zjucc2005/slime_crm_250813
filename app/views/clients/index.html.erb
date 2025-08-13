@@ -1,0 +1,83 @@
+<div class="card p-2 mb-1 d-flex flex-row justify-content-between">
+    <div>
+        <%= link_to new_client_path(return_to: request.url), class: 'btn btn-primary' do %>
+            <i class="fa fa-plus"></i> <%= t('action.new_model', model: mt(:candidate, :seat)) %>
+        <% end %>
+        <%= render partial: 'clients/widgets/btn_import_client' %>
+    </div>
+    <%= render partial: 'clients/widgets/search_modal' %>
+</div>
+
+<% if @clients.any? %>
+    <div class="card p-2 mb-2">
+        <div class="table-responsive">
+            <table class="table table-sm table-striped nowrap card-text">
+                <thead>
+                <tr>
+                    <th><%= check_box_tag :selectAll, nil, nil, onclick: 'selectAll(this);' %></th>
+                    <th><%= mt(:candidate, :id) %></th>
+                    <th><%= mt(:candidate, :name) %></th>
+                    <th><%= mt(:candidate, :nickname) %></th>
+                    <th><%= mt(:client, :phone) %></th>
+                    <th><%= mt(:client, :phone1) %></th>
+                    <th><%= mt(:client, :email) %></th>
+                    <th><%= mt(:candidate, :linkedin) %></th>
+                    <th><%= mt(:candidate, :title) %></th>
+                    <th><%= mt(:candidate, :job_status) %></th>
+                    <th><%= mt(:company, :name) %></th>
+                    <th><%= t(:client_active) %></th>
+                    <th><%= mt(:candidate, :created_by) %></th>
+                    <th><%= mt(:candidate, :created_at) %></th>
+                    <th class="action"><%= t(:operation) %></th>
+                </tr>
+                </thead>
+                <tbody>
+                <% @clients.each do |client| %>
+                    <tr>
+                        <td><%= check_box_tag :'uids[]', client.id, false %></td>
+                        <td><%= content_tag :span, "# #{client.uid}", class: 'text-gray' %></td>
+                        <td><%= link_to client.name, edit_client_path(client) %></td>
+                        <td><%= client.nickname %></td>
+                        <td><%= client.phone %></td>
+                        <td><%= client.phone1 %></td>
+                        <td><%= link_to client.email, "mailto:#{client.email}", target: '_blank' %></td>
+                        <td><%= link_to client.linkedin, client.linkedin, target: '_blank' %></td>
+                        <td><%= client.title %></td>
+                        <td><%= candidate_job_status_badge(client.job_status) %></td>
+                        <td><%= client.company_id ? (link_to client.company.name, company_path(client.company_id, return_to: request.url)) : nil %></td>
+                        <td><%= client_active_badge(client.client_active?) %></td>
+                        <td><%= client.creator.name_cn %></td>
+                        <td><%= client.created_at.strftime('%F %T') %></td>
+                        <td class="action">
+                            <div class="dropdown dropleft">
+                                <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                                    <i class="fa fa-cog"></i> <%= t(:operation) %>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-header"><%= client.uid_name %></div>
+                                    <%= link_to projects_path(client_id: client.id), class: 'dropdown-item text-smaller' do %>
+                                        <i class="fa fa-list"></i> <%= mt(:project) %>
+                                    <% end %>
+                                    <%= link_to edit_client_path(client), class: 'dropdown-item text-smaller' do %>
+                                        <i class="fa fa-edit"></i> <%= t('action.edit') %>
+                                    <% end %>
+                                    <%= link_to candidate_path(client, return_to: request.url), method: :delete, class: 'dropdown-item text-smaller', data: { confirm: t(:sure_to_delete) } do %>
+                                        <i class="fa fa-trash text-danger"></i> <%= t('action.delete') %>
+                                    <% end if can?(:destroy, Candidate) && client.can_delete? %>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                <% end %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <%= will_paginate @clients %>
+<% else %>
+    <div class="card p-2">
+        <div class="p-4 text-center">
+            <h5 class="text-gray mb-0"><%= t(:not_found) %></h5>
+        </div>
+    </div>
+<% end %>

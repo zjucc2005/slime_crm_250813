@@ -1,0 +1,12 @@
+<%= render partial: 'costs/widgets/nav', locals: { active: 1 } %>
+
+<div class="card p-2 mb-2">
+    <div class="card-header">
+        <h5><%= t('action.edit_model', model: mt(:cost_summary)) %></h5>
+        <%= link_to fa_icon_tag('arrow-left'), return_to(costs_path), class: 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <%= render partial: 'v_summary_form', locals: { cost_summary_id: params[:cost_summary_id] } %>
+    </div>
+</div>

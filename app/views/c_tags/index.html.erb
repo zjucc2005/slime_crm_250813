@@ -1,0 +1,129 @@
+<div id="app" class="card">
+    <div class="card-header">
+        <h5><i class="fa fa-tags text-info"></i> 标签数据</h5>
+    </div>
+    <div class="card-body">
+        <el-row>
+            <el-col :span="12">
+                <el-tree
+                    :data="treeData"
+                    node-key="id"
+                    default-expand-all
+                    :expand-on-click-node="false">
+                    <span class="c-tree-node" slot-scope="{ node, data }">
+                        <span>
+                            {{  node.label }}<el-tag size="mini" effect="dark" type="danger">88</el-tag>
+                        </span>
+                        <span>
+                          <el-button
+                            type="text"
+                            size="mini"
+                            @click="() => append(data)">
+                            Append
+                          </el-button>
+                          <el-button
+                            type="text"
+                            size="mini"
+                            @click="() => remove(node, data)">
+                            Delete
+                          </el-button>
+                        </span>
+                    </span>
+                </el-tree>
+            </el-col>
+            <el-col :span="12">
+                <el-statistic :value="deadline2" time-indices title="商品降价">
+                    <template slot="suffix"> 抢购即将开始 </template>
+                </el-statistic>
+                <el-statistic @finish="hilarity" :value="deadline3" time-indices title="添加时间">
+                    <template slot="suffix">
+                      <el-button type="primary" size="small" @click="add">add 10 second</el-button>
+                    </template>
+                </el-statistic>
+            </el-col>
+        </el-row>
+    </div>
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            treeData:  [{
+                id: 1,
+                label: '一级 1',
+                children: [{
+                  id: 4,
+                  label: '二级 1-1',
+                  children: [{
+                    id: 9,
+                    label: '三级 1-1-1'
+                  }, {
+                    id: 10,
+                    label: '三级 1-1-2'
+                  }]
+                }]
+              }, {
+                id: 2,
+                label: '一级 2',
+                children: [{
+                  id: 5,
+                  label: '二级 2-1'
+                }, {
+                  id: 6,
+                  label: '二级 2-2'
+                }]
+              }, {
+                id: 3,
+                label: '一级 3',
+                children: [{
+                  id: 7,
+                  label: '二级 3-1'
+                }, {
+                  id: 8,
+                  label: '二级 3-2'
+                }]
+            }],
+            deadline2: Date.now() + 1000 * 60 * 60 * 8,
+            deadline3: Date.now() + 1000 * 30
+        },
+        // mounted: function(){
+        //     this.$nextTick(function(){
+        //         var _this_ = this;
+        //         // 加载部门数据
+        //         $.get('/hospitals/'+ _this_.hospital.id + '/load_departments', function(data){
+        //             _this_.departments = data;
+        //             console.log('load departments data:ok')
+        //         })
+        //     })
+        // }
+        methods: {
+            hilarity() {
+                this.$notify({
+                  title: '提示',
+                  message: '时间已到，你可知寸金难买寸光阴？',
+                  duration: 0,
+                });
+            },
+            append(data){
+                console.log('append data:', data)
+            },
+            add() {
+                this.deadline3 = this.deadline3 + 1000 * 10;
+            }
+        }
+    })
+</script>
+
+<style>
+    .c-tree-node{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .el-tag {
+        margin-left: 10px;
+        margin-right: 10px;
+        border-radius: 10px;
+    }
+</style>

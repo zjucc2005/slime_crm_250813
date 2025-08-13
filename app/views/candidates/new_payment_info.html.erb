@@ -1,0 +1,27 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('user-circle') %> <%= t('action.new_model', :model => mt(:candidate_payment_info)) %></h5>
+        <%= link_to fa_icon_tag('close'), 'javascript:history.go(-1);', :class => 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <div class="row">
+            <div class="col-12 d-flex flex-column flex-lg-row justify-content-between">
+                <h6>
+                    <span class="text-gray mr-3"><%= "# #{@candidate.uid}" %></span>
+                    <span><%= @candidate.last_name %> <%= @candidate.first_name %></span>
+                </h6>
+            </div>
+        </div>
+
+        <%= form_for @payment_info, :url => create_payment_info_candidate_path(@candidate), :method => :post do |f| %>
+            <%= model_error_tag(@payment_info) %>
+            <%= render :partial => 'candidate_payment_infos/form', :locals => { :f => f } %>
+
+            <div class="form-group mb-0">
+                <%= f.submit t('action.submit'), :class => 'btn btn-submit' %>
+                <%= link_to t('action.back'), 'javascript:history.go(-1);', :class => 'btn btn-back' %>
+            </div>
+        <% end %>
+    </div>
+</div>

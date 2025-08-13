@@ -1,0 +1,227 @@
+<% activate_sidebar %>
+<header class="header">
+    <nav class="navbar navbar-expand-lg bg-dark navbar-dark fixed-top">
+        <!--<%= link_to root_path, class:'navbar-brand' do %>-->
+            <!--<%= image_pack_tag 'logo-white.svg', style: 'width: 100px' %>-->
+        <!--<% end %>-->
+
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="collapsibleNavbar">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <%= link_to t(:homepage), root_path, class:"nav-link #{yield :nav_home}" %>
+                </li>
+                <% if can? :index, Candidate %>
+                    <li class="nav-item">
+                        <%= link_to mt(:expert), candidates_path, class:"nav-link #{yield :nav_candidates}" %>
+                    </li>
+                <% end %>
+                <% if current_user.su? %>
+                    <li class="nav-item">
+                        <%= link_to 'v_专家', v_index_candidates_path, class:"nav-link #{yield :nav_candidates}" %>
+                    </li>
+                <% end %>
+                <% if can? :index, Doctor %>
+                    <li class="nav-item">
+                        <%= link_to mt(:doctor), doctors_path, class:"nav-link #{yield :nav_doctors}" %>
+                    </li>
+                <% end %>
+                <% if can? :yibao, Candidate %>
+                    <li class="nav-item">
+                        <%= link_to '医保', yibao_candidates_path(is_clinical: true), class:"nav-link #{yield :nav_yibao}" %>
+                    </li>
+                <% end %>
+                <% if can? :index, Company %>
+                    <li class="nav-item">
+                        <%= link_to mt(:company), companies_path, class:"nav-link #{yield :nav_companies}" %>
+                    </li>
+                <% end if false %>
+                <% if can? :index, Company %>
+                    <li class="nav-item dropdown">
+                        <%= link_to '#', id: 'companies-drop', data: { toggle: 'dropdown' }, class: "nav-link dropdown-toggle #{yield :nav_companies}" do %>
+                            <% if controller_name == 'clients' %>
+                                <%= mt(:candidate, :seat) %>
+                            <% elsif controller_name == 'prepaid_clients' %>
+                                <%= mt(:prepaid_client) %>
+                            <% else %>
+                                <%= mt(:company) %>
+                            <% end %>
+                        <% end %>
+                        <div class="dropdown-menu fa-fixed">
+                            <%= link_to companies_path, class: 'dropdown-item' do %>
+                                <i class="fa fa-bank"></i> <%= mt(:company) %>
+                            <% end if can?(:index, Company) %>
+                            <%= link_to clients_path, class: 'dropdown-item' do %>
+                                <i class="fa fa-users"></i> <%= mt(:candidate, :seat) %>
+                            <% end if can?(:index, Client) %>
+                            <%= link_to prepaid_clients_path, class: 'dropdown-item' do %>
+                                <i class="fa fa-credit-card"></i> 预付费客户
+                            <% end if can?(:index, PrepaidClient) %>
+                        </div>
+                    </li>
+                <% end %>
+                <% if can? :index, Project %>
+                    <li class="nav-item">
+                        <%= link_to mt(:project), projects_path, class:"nav-link #{yield :nav_projects}" %>
+                    </li>
+                <% end if false %>
+                <% if can? :index, Project %>
+                    <li class="nav-item dropdown">
+                        <%= link_to '#', id: 'projects-drop', data: { toggle: 'dropdown' }, class:"nav-link dropdown-toggle #{yield :nav_projects}" do %>
+                            <%= controller_name == 'project_requirements' ? mt(:project_requirement) : mt(:project) %>
+                        <% end %>
+                        <div class="dropdown-menu fa-fixed">
+                            <%= link_to projects_path, class:'dropdown-item' do %>
+                                <i class="fa fa-map"></i> <%= mt(:project) %>
+                            <% end if can?(:index, Project) %>
+                            <%= link_to project_requirements_path, class:'dropdown-item' do %>
+                                <i class="fa fa-tasks"></i> <%= mt(:project_requirement) %>
+                            <% end if can?(:index, ProjectRequirement) %>
+                            <%= link_to work_board_projects_path, class: 'dropdown-item' do %>
+                                <i class="fa fa-th-large"></i> <%= mt(:project, :work_board) %> <span class="badge badge-danger">将要停用</span>
+                            <% end if false # can?(:work_board, Project) %>
+                            <%= link_to v_pm_dashboard_projects_path, data: { turbolinks: false }, class: 'dropdown-item' do %>
+                                <i class="fa fa-map text-danger"></i> 项目管理
+                            <% end if can?(:v_pm_dashboard, Project) %>
+                            <%= link_to v_pa_dashboard_projects_path, data: { turbolinks: false }, class: 'dropdown-item' do %>
+                                <i class="fa fa-tasks text-primary"></i> 项目沟通
+                            <% end if can?(:v_pa_dashboard, Project) %>
+                        </div>
+                    </li>
+                <% end %>
+                <% if can? :index, CallRecord %>
+                    <li class="nav-item dropdown">
+                        <%= link_to '#', id: 'call-record-drop', data: { toggle: 'dropdown' }, class: "nav-link dropdown-toggle #{yield :nav_call_records}" do %>
+                            通话记录
+                        <% end %>
+                        <div class="dropdown-menu fa-fixed">
+                            <%= link_to v_index_call_records_path(category: 'expert'), data: { turbolinks: false }, class: 'dropdown-item' do %>
+                                <i class="fa fa-phone text-primary"></i>通话记录 - 专家
+                            <% end %>
+                            <%= link_to v_index_call_records_path(category: 'doctor'), data: { turbolinks: false }, class: 'dropdown-item' do %>
+                                <i class="fa fa-phone text-danger"></i>通话记录 - 医生
+                            <% end %>
+                        </div>
+                    </li>
+                <% end %>
+                <% if can? :index, Finance %>
+                    <li class="nav-item dropdown">
+                        <%= link_to '#', id: 'finance-drop', data: { toggle: 'dropdown' }, class: "nav-link dropdown-toggle #{yield :nav_finance}" do %>
+                            <%= mt(:finance) %>
+                        <% end %>
+                        <div class="dropdown-menu fa-fixed">
+                            <%= link_to finance_index_path, class: 'dropdown-item' do %>
+                                <i class="fa fa-money"></i> <%= mt(:finance) %>
+                            <% end %>
+                            <%= link_to finance_dashboard_statistics_path, class: 'dropdown-item' do %>
+                                <i class="fa fa-dashboard text-danger"></i> 财务金额统计
+                            <% end %>
+                        </div>
+                    </li>
+                <% end %>
+                <% if can? :index, Statistic %>
+                    <li class="nav-item dropdown">
+                        <%= link_to '#', id: 'statistic-drop', data: { toggle: 'dropdown' }, class: "nav-link dropdown-toggle #{yield :nav_statistic}" do %>
+                            <%= mt(:statistic) %>
+                        <% end %>
+                        <div class="dropdown-menu fa-fixed">
+                            <%= link_to costs_path, class: 'dropdown-item' do %>
+                                <i class="fa fa-bar-chart text-danger"></i> <%= mt(:cost_summary) %>
+                            <% end if can?(:index, Cost) %>
+                            <%= link_to v_index_kpi_summaries_path, data: { turbolinks: false }, class: 'dropdown-item' do %>
+                                <i class="fa fa-th-large text-danger"></i> <%= mt(:kpi_summary) %>
+                            <% end if can?(:v_index, KpiSummary) %>
+                            <%= link_to v_index_company_summaries_path, data: { turbolinks: false }, class: 'dropdown-item' do %>
+                                <i class="fa fa-th-large text-danger"></i> <%= mt(:company_summary) %>
+                            <% end if can?(:v_index, CompanySummary) %>
+
+                            <%= link_to finance_summary_statistics_path, class: 'dropdown-item' do %>
+                                <i class="fa fa-bar-chart text-danger"></i> <%= t('dashboard.finance_summary') %>
+                            <% end %>
+                            <%= link_to expense_summary_statistics_path, data: { turbolinks: false }, class: 'dropdown-item' do %>
+                                <i class="fa fa-money text-success"></i> 花费统计总览
+                            <% end %>
+                            <%= link_to total_performance_statistics_path, class: 'dropdown-item' do %>
+                                <i class="fa fa-bar-chart text-danger"></i> 总业绩
+                            <% end %>
+                            <%= link_to client_statistics_statistics_path, data: { turbolinks: false }, class: 'dropdown-item' do %>
+                                <i class="fa fa-users text-primary"></i> 客户统计总览
+                            <% end %>
+                            <%= link_to employee_statistics_statistics_path, data: { turbolinks: false }, class: 'dropdown-item' do %>
+                                <i class="fa fa-sort-amount-desc text-danger"></i> 员工统计总览
+                            <% end %>
+                            <%= link_to v_monthly_new_statistics_path, data: { turbolinks: false }, class: 'dropdown-item' do %>
+                                <i class="fa fa-line-chart text-danger"></i> 每月新增统计
+                            <% end %>
+                            <%= link_to current_month_task_ranking_statistics_path, class: 'dropdown-item' do %>
+                                <i class="fa fa-sort-amount-desc text-danger"></i> 收费小时数排名
+                            <% end %>
+                            <%= link_to v_client_zhuanhualv_statistics_path, data: { turbolinks: false }, class: 'dropdown-item' do %>
+                                <i class="fa fa-sort-amount-desc text-danger"></i> 转化率排名 - 客户联系人
+                            <% end %>
+                        </div>
+                    </li>
+                <% end %>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="settings-drop" data-toggle="dropdown">
+                        <%= t(:settings) %>
+                    </a>
+                    <div class="dropdown-menu fa-fixed">
+                        <%= link_to users_path, class: 'dropdown-item' do %>
+                            <i class="fa fa-user"></i> <%= mt(:user) %>
+                        <% end if can?(:index, User) %>
+                        <%= link_to user_channels_path, class: 'dropdown-item' do %>
+                            <i class="fa fa-code-fork"></i> <%= mt(:user_channel) %>
+                        <% end if can?(:index, UserChannel) %>
+                        <%= link_to card_templates_path, class:'dropdown-item' do %>
+                            <%= fa_icon_tag('drivers-license-o') %> <%= mt(:card_template) %>
+                        <% end if can?(:index, CardTemplate) %>
+                        <%= link_to location_data_path, class:'dropdown-item' do %>
+                            <%= model_icon('LocationDatum') %> <%= mt(:location_datum) %>
+                        <% end if can?(:index, LocationDatum) %>
+                        <%= link_to hospitals_path, class:'dropdown-item' do %>
+                            <%= model_icon('Hospital') %> <%= mt(:hospital) %>
+                        <% end if can?(:index, Hospital) %>
+                        <%= link_to banks_path, class:'dropdown-item' do %>
+                            <%= fa_icon_tag('bank') %> <%= mt(:bank) %>
+                        <% end if can?(:index, Bank) %>
+                        <%= link_to industries_path, class:'dropdown-item' do %>
+                            <%= fa_icon_tag('industry') %> <%= mt(:industry) %>
+                        <% end if can?(:index, Industry) %>
+                        <%= link_to search_aliases_path, class:'dropdown-item' do %>
+                            <%= fa_icon_tag('font') %> <%= mt(:search_alias) %>
+                        <% end if can?(:index, SearchAlias) %>
+                        <%= link_to c_tags_path, class: 'dropdown-item' do %>
+                            <i class="fa fa-tags text-info"></i> 标签数据
+                        <% end if can?(:index, CTag) %>
+                        <%= link_to import_gllue_candidates_extras_path, class:'dropdown-item' do %>
+                            <%= fa_icon_tag('wrench') %> <%= t(:import_gllue_candidates) %>
+                        <% end if can?(:import_gllue_candidates, Extra) %>
+                        <%= link_to my_account_users_path, class:'dropdown-item' do %>
+                            <%= fa_icon_tag('user') %> <%= t(:my_account) %>
+                        <% end if can?(:my_account, User) %>
+                        <div class="dropdown-divider"></div>
+                        <%= link_to destroy_user_session_path, method: :delete, data: { confirm: t(:sure_to_logout) }, class:'dropdown-item' do %>
+                            <i class="fa fa-sign-out"></i> <%= t('action.quit') %>
+                        <% end if signed_in? %>
+                        <%= link_to css_demo_path, class:'dropdown-item' do %>
+                            <i class="fa fa-cc text-danger"></i> CSS DEMO
+                        <% end if can?(:css_demo, HomeController) %>
+                        <%= link_to xibao_czbank_index_path, class: 'dropdown-item' do %>
+                            <i class="fa fa-picture-o text-danger"></i> CZBANK XIBAO
+                        <% end if can?(:xibao, CzbankController) %>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <% if signed_in? %>
+            <div class="notifications">
+                <div class="candidate-access-limit" id="candidate-access-limit">
+                    <%= "#{current_user.candidate_access_logs.today.count} / #{current_user.candidate_access_limit}" %>
+                </div>
+            </div>
+        <% end if false %>
+    </nav>
+</header>

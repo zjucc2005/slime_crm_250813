@@ -1,0 +1,97 @@
+<table class="table table-sm table-striped nowrap card-text">
+    <thead>
+    <tr>
+        <th><%= mt(:call_record, :id) %></th>
+        <th></th>
+        <th><%= mt(:call_record, :name) %></th>
+        <th><%= mt(:call_record, :company) %></th>
+        <th><%= mt(:call_record, :department) %></th>
+        <th><%= mt(:call_record, :title) %></th>
+        <th><%= mt(:call_record, :memo) %></th>
+        <th><%= mt(:call_record, :phone) %></th>
+        <th><%= mt(:call_record, :number_of_calls) %></th>
+        <th><%= mt(:call_record, :status) %></th>
+        <th>
+            <div class="dropdown">
+                <span class="dropdown-toggle" data-toggle="dropdown">
+                    <%= mt(:project_requirement) %> ID
+                </span>
+                <div class="dropdown-menu">
+                    <% project = Project.find_by(id: project_id) %>
+                    <% project.project_requirements.order(id: :asc).each do |item| %>
+                        <div class="dropdown-item text-smaller">
+                            <%= check_box_tag :project_requirement_id, item.id, true, name: "projectRequirementId_#{project_id}", onclick: "rfsCallRecord(#{project_id});" %>
+                            <%= "# #{item.uid}" %>
+                        </div>
+                    <% end %>
+                    <div class="dropdown-item text-smaller">
+                        <%= check_box_tag :project_requirement_id, '', true, name: "projectRequirementId_#{project_id}", onclick: "rfsCallRecord(#{project_id});" %>
+                    </div>
+                </div>
+            </div>
+        </th>
+        <th>
+            <div class="dropdown">
+                <span class="dropdown-toggle" data-toggle="dropdown">
+                    <%= mt(:call_record, :operator) %>
+                </span>
+                <div class="dropdown-menu">
+                    <% call_records.pluck(:operator_id).uniq.each do |operator_id| %>
+                    <div class="dropdown-item text-smaller">
+                        <%= check_box_tag :operator_id, operator_id, true, name: "operatorId_#{project_id}", onclick: "rfsCallRecord(#{project_id});" %>
+                        <%= User.find_by(id: operator_id).try(:name_cn) %>
+                    </div>
+                    <% end %>
+                </div>
+            </div>
+        </th>
+        <th><%= mt(:call_record, :updated_at) %></th>
+        <th class="action"><%= t(:operation) %></th>
+    </tr>
+    </thead>
+    <tbody>
+    <% call_records.each do |call_record| %>
+        <tr data-project-id="<%= project_id %>" data-operator-id="<%= call_record.operator_id %>" data-project-requirement-id="<%= call_record.project_requirement_id %>">
+            <td><%= content_tag :span, "# #{call_record.uid}", class: 'text-gray' %></td>
+            <td>
+                <%= call_record_category_badge(call_record.category) %>
+            </td>
+            <td title="<%= call_record.name %>">
+                <% if call_record.candidate_id %>
+                    <%= link_to truncate(call_record.name, length: 9),
+                                call_record.category == 'doctor' ? doctor_path(call_record.candidate_id) : candidate_path(call_record.candidate_id), target: '_blank' %>
+                <% else %>
+                    <%= truncate(call_record.name, length: 9) %>
+                <% end %>
+            </td>
+            <td title="<%= call_record.company %>"><%= truncate(call_record.company, length: 18) %></td>
+            <td title="<%= call_record.department %>"><%= truncate(call_record.department, length: 18) %></td>
+            <td title="<%= call_record.title %>"><%= truncate(call_record.title, length: 10) %></td>
+            <td>
+                <a data-toggle="popover" data-trigger="hover" data-placement="right" title="<%= mt(:call_record, :memo) %>" data-html="true" data-content="<%= call_record.memo.to_s.gsub("\n", '<br>') %>">
+                    <span class="text-link"><%= truncate(call_record.memo.to_s, length: 19) %></span>
+                </a>
+            </td>
+            <td title="<%= call_record.phone %>">
+                <%= text_field_tag :phone, call_record.phone, onchange: 'rusCallRecord(this);', data: { id: call_record.id, attr: 'phone' } %>
+                <%#= link_to truncate(call_record.phone, length: 14), candidates_path(phone: call_record.phone) %>
+            </td>
+            <td><%= call_record.number_of_calls %></td>
+            <td><%= call_record_status_badge(call_record.status) %></td>
+            <td><%= call_record.project_requirement_id ? (content_tag :span, "# #{sprintf("%06d", call_record.project_requirement_id)}", class: 'text-gray') : '' %></td>
+            <td><%= call_record.operator.try(:name_cn) %></td>
+            <td><%= call_record.updated_at.strftime('%F %T') %></td>
+            <td class="action">
+                <div class="btn-group">
+                    <%= link_to 'javascript:void(0);', onclick: "utilsLoadingModal({op: 'editCallRecord', id: #{call_record.id}})", class: 'btn btn-edit btn-xs' do %>
+                        <i class="fa fa-edit"></i> <%= t('action.update') %>
+                    <% end %>
+                    <%= link_to remote_delete_call_record_path(call_record), method: :post, remote: true, class: 'btn btn-danger btn-xs', data: { confirm: t(:sure_to_delete)} do %>
+                        <i class="fa fa-trash"></i> <%= t('action.delete') %>
+                    <% end %>
+                </div>
+            </td>
+        </tr>
+    <% end %>
+    </tbody>
+</table>

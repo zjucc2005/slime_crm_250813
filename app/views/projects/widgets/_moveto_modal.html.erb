@@ -1,0 +1,34 @@
+<%= button_tag :type => 'button', :class => 'btn btn-warning btn-xs', :data => { :toggle => 'modal', :target => "#movetoModal#{task.id}"} do %>
+    <%= fa_icon_tag('exchange') %> <%= t(:moveto) %>
+<% end %>
+
+<div id="movetoModal<%= task.id %>" class="modal fade" tabindex="-1" data-keyboard="false" data-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"><%= t(:moveto_project) %></h4>
+                <button type="button" data-dismiss="modal" class="close">&times;</button>
+            </div>
+
+            <%= form_tag moveto_project_task_path(task), :method => :put do %>
+                <div class="modal-body">
+                    <h6>
+                        <span class="text-gray mr-3"><%= "# #{task.uid}" %></span>
+                        <span><%= task.expert.name %></span>
+                    </h6>
+                    <div class="row">
+                        <div class="col-lg-12 form-group">
+                            <%= label_tag :project_id, mt(:project) %><span class="text-red">*</span>
+                            <%= select_tag :project_id, options_for_select(project_options(:all), params[:project_id]),
+                                           :prompt => default_prompt, :required => true, :class => 'form-control select2', :id => "moveto_#{task.id}" %>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" data-dismiss="modal" class="btn btn-back"><%= t('action.close') %></button>
+                    <%= submit_tag t('action.submit'), :class => 'btn btn-submit' %>
+                </div>
+            <% end %>
+        </div>
+    </div>
+</div>

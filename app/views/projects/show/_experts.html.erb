@@ -1,0 +1,59 @@
+<div class="card card-inner mb-3">
+    <div class="card-header">
+        <h5>
+            <%= fa_icon_tag('user-circle') %> <%= mt(:expert) %>
+            <%= link_to t(:show_all), experts_project_path(@project), :class => 'h6' %>
+        </h5>
+        <%= link_to candidates_path(project_id: @project.id, from_source: 'project'), :class => 'btn btn-primary btn-xs' do %>
+            <%= fa_icon_tag('plus') %> <%= t('action.add') %>
+        <% end if can?(:index, Candidate) && @can_operate && @project.can_edit? %>
+    </div>
+
+    <div class="card-body table-responsive">
+        <% if experts.any? %>
+            <table class="table table-sm table-striped table-hover card-text">
+                <thead>
+                <tr>
+                    <th><%= mt(:candidate, :id) %></th>
+                    <th><%= mt(:candidate, :name) %></th>
+                    <th><%= mt(:candidate_experience, :company) %></th>
+                    <th><%= mt(:candidate_experience, :department) %></th>
+                    <th><%= mt(:candidate_experience, :title) %></th>
+                    <th class="action"><%= t(:operation) %></th>
+                </tr>
+                </thead>
+                <tbody>
+                <% experts.each do |expert| %>
+                    <tr>
+                        <% exp = expert.latest_work_experience %>
+                        <td><%= link_to "# #{expert.uid}", expert.category == 'doctor' ? doctor_path(expert) : candidate_path(expert), :class => 'text-gray' %></td>
+                        <td><%= link_to expert.name, expert.category == 'doctor' ? doctor_path(expert) : candidate_path(expert), :target => '_blank' %></td>
+                        <td><%= exp.try(:org_cn) %></td>
+                        <td><%= exp.try(:department) %></td>
+                        <td><%= exp.try(:title) %></td>
+                        <td class="action">
+                            <%= link_to delete_expert_project_path(@project, expert_id: expert.id),
+                                        :method => :delete, :data => { :confirm => t(:sure_to_remove) },
+                                        :class => 'btn btn-danger btn-xs' do %>
+                                <%= fa_icon_tag('trash') %> <%= t('action.remove') %>
+                            <% end if false && can?(:delete_expert, Project) && @can_operate && @project.can_edit? %>
+                            <%= link_to add_project_task_project_path(@project, expert_id: expert.id) do %>
+                                <%= t('action.add_model', model: mt(:project_task)) %>
+                            <% end if can?(:new, ProjectTask) %>
+                        </td>
+                    </tr>
+                <% end %>
+                <tr>
+                    <td colspan="10" class="text-center">
+                        <%= link_to '...', experts_project_path(@project), :title => t(:show_all) %>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        <% else %>
+            <div class="p-2 text-center">
+                <h5 class="text-gray mb-0"><%= t(:not_found) %></h5>
+            </div>
+        <% end %>
+    </div>
+</div>

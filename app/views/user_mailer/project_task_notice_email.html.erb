@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+</head>
+<body style="font-family: Arial, Helvetica, sans-serif; font-size: 14px;">
+<% if @category == 'A' %>
+    <% actual_price = @project_task.actual_price || @project_task.base_price %>
+    <p>
+        感谢您使用海鄞咨询，以下是您最近一次安排的专家访谈信息，供您参考：<br>
+        <b>访谈日期：</b><%= @project_task.started_at.strftime('%F') %><br>
+        <b>访谈时间：</b><%= @project_task.started_at.strftime('%H:%M') %><br>
+        <b>访谈编号：</b><%= @project_task.interview_no %><br>
+        <b>专家信息：</b><%= "#{@project.code}-#{@project.name}-#{@project_task.expert_level.capitalize} Expert ##{@expert.uid} #{@project_task.expert_name_for_external}" %><br>
+        <b>访谈时长：</b><%= @project_task.duration %>分钟<br>
+        <b>收费时长：</b><%= @project_task.charge_duration %>分钟<br>
+        <b>访谈费用：</b><%= actual_price %>元<br>
+        <b>备注：</b><%= @project_task.memo %><br>
+    </p>
+<% elsif @category == 'B' %>
+    <% actual_price = @project_task.actual_price || @project_task.base_price %>
+    <p>您好</p>
+    <p>
+        感谢您使用海鄞咨询，以下是该专家访谈信息，供您参考：<br>
+        <b>访谈日期：</b><%= @project_task.started_at_fwt %><br>
+        <b>访谈时长：</b><%= @project_task.duration %>分钟<br>
+        <b>收费时长：</b><%= @project_task.charge_duration %>分钟<br>
+        <b>专家信息：</b><%= "#{@project_task.expert_level.capitalize} Expert ##{@expert.uid} #{@project_task.expert_name_for_external}" %><br>
+        <% r_f = @project_task.recruitment_fee_for_iqvia %>
+        <b>专家费率：</b>专家费<%= r_f ? (@project_task.charge_rate * @project_task.expert_rate).round(0) - r_f : 'NA' %>+招募费<%= r_f || 'NA' %>/小时<br>
+        <b>访谈费用：</b><%= actual_price %>元<br>
+        <b>备注：</b><%= @project_task.memo %><br>
+    </p>
+<% elsif @category == 'C' %>
+    <% actual_price = @project_task.actual_price || @project_task.base_price %>
+    <% expert_rate = @project_task.expert_rate || 1 %>
+    <% tax_rate = @project_task.active_contract.tax_rate %>
+    <p>
+        感谢您使用海鄞咨询，以下是您最近一次安排的专家访谈信息，供您参考：<br>
+        <b>访谈日期：</b><%= @project_task.started_at.strftime('%F') %><br>
+        <b>访谈时间：</b><%= @project_task.started_at.strftime('%H:%M') %><br>
+        <b>专家信息：</b><%= "#{@project.code}-#{@project.name}-#{@project_task.expert_level.capitalize} Expert ##{@expert.uid} #{@project_task.expert_name_for_external}" %><br>
+        <b>专家背景：</b><%= @project_task.expert.description %><br><br>
+        <b>访谈时长：</b><%= @project_task.duration %>分钟<br>
+        <b>专家倍率：</b><%= expert_rate %><br>
+        <b>收费时长：</b><%= ((@project_task.charge_duration.to_f) / 60 * expert_rate).round(2) %>Credit<br>
+        <b>基础费率：</b><%= @project_task.is_taxed ? "#{@project_task.charge_rate}/小时(含税)" : "#{@project_task.charge_rate}/小时(不含税)" %><br>
+        <% if @project_task.is_taxed %>
+        <b>访谈费用：</b><%= actual_price %>元(含税)<br>
+        <% else %>
+        <b>访谈费用：</b><%= actual_price %>元(不含税)，<%= actual_price * (1 + tax_rate) %>元(含税)<br>
+        <% end %>
+        <b>备注：</b><%= @project_task.memo %><br>
+    </p>
+<% else %>
+
+<% end %>
+<p><b><i>*如果您对访谈时长有异议，请在收到邮件后48小时内回复，超过48小时，我们默认时长确认</i></b></p>
+<p>如果对我们的服务有任何意见和建议，欢迎随时与我们联系；谢谢您的支持，任何项目需求，请随时发送至 project@hci-consulting.com 或与您熟悉的项目经理直接取得联系。</p>
+<p>
+    此致<br>
+    海鄞咨询<br>
+    <a href="http://www.hci-consulting.com" target="_blank">www.hci-consulting.com</a>
+</p>
+</body>
+</html>

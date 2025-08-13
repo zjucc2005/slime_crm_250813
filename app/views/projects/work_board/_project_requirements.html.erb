@@ -1,0 +1,39 @@
+<table class="table table-sm table-striped nowrap card-text" id="showProjectRequirement">
+    <thead>
+    <tr>
+        <th><%= mt(:project_requirement, :id) %></th>
+        <th><%= mt(:project_requirement, :title) %> / <%= mt(:project_requirement, :content) %></th>
+        <th><%= mt(:project_requirement, :demand_number) %></th>
+        <th><%= mt(:project_requirement, :file) %></th>
+        <th><%= mt(:project_requirement, :status) %></th>
+        <th><%= mt(:project_requirement, :operator) %></th>
+        <th><%= mt(:project, :created_at) %></th>
+        <th class="action"><%= t(:operation) %></th>
+    </tr>
+    </thead>
+    <tbody>
+    <% @project_requirements.each do |instance| %>
+        <tr>
+            <td><%= content_tag :span, "# #{instance.uid}", class: 'text-gray' %></td>
+            <td>
+                <a data-toggle="popover" data-trigger="hover" data-placement="right" title="# <%= instance.uid %>" data-html="true" data-content="<%= instance.content.gsub("\n", '<br>') %>">
+                    <%= truncate(instance.title, length: 30) %>
+                </a>
+            </td>
+            <td><%= instance.demand_number %></td>
+            <td><%= link_to instance.file.url, title: instance.file.identifier do %><i class="fa fa-download"></i> <% end if instance.file.present? %></td>
+            <td><%= project_requirement_status_badge(instance.status) %></td>
+            <td><%= instance.operator.name_cn rescue nil %></td>
+            <td><%= instance.created_at.strftime('%F') %></td>
+            <td class="action">
+                <%= link_to project_requirement_path(instance), class: 'btn btn-xs btn-primary', target: '_blank' do %>
+                    <i class="fa fa-tasks"></i> <%= t('action.detail') %>
+                <% end %>
+            </td>
+        </tr>
+    <% end %>
+    </tbody>
+</table>
+<script>
+    $("#showProjectRequirement [data-toggle='popover']").popover();
+</script>

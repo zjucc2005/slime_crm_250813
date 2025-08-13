@@ -1,0 +1,12 @@
+zh_cn:
+  activerecord:
+    models:
+      medical_insurance_info: 医保信息
+    attributes:
+      medical_insurance_info:
+        year: 年份
+        is_clinical: 是否临床
+        non_clinical_type: 分类
+        sub_type: 子分类
+      candidate:
+        is_yibao: 是否加入医保

@@ -1,0 +1,191 @@
+<!-- employee monthly statistics -->
+<% content_for :head do %>
+  <% unless content_for?(:vue_element_ui_loaded) %>
+    <%= javascript_include_tag 'https://cdn.jsdelivr.net/npm/vue/dist/vue.js' %>
+    <%= stylesheet_link_tag 'https://unpkg.com/element-ui/lib/theme-chalk/index.css' %>
+    <%= javascript_include_tag 'https://unpkg.com/element-ui/lib/index.js' %>
+    <% content_for :vue_element_ui_loaded, true %>
+  <% end %>
+  <style>
+    /* 自定义日期选择器样式 */
+    .el-date-picker {
+      transition: all 0.3s ease;
+    }
+    .el-date-picker:hover {
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+    }
+    .date-picker-dropdown .el-picker-panel__content {
+      border-radius: 4px;
+    }
+    .date-picker-dropdown .el-date-table td.current:not(.disabled) span {
+      background-color: #409EFF;
+      color: white;
+      border-radius: 50%;
+    }
+    .date-picker-dropdown .el-date-table td.today span {
+      color: #409EFF;
+      font-weight: bold;
+    }
+    .el-button.is-plain:focus, .el-button.is-plain:hover {
+      border-color: #409EFF;
+      color: #409EFF;
+    }
+  </style>
+<% end %>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <%= fa_icon_tag('user-tie') %>
+            <%= @employee_name %> - 月度统计数据
+        </h5>
+        <%= link_to fa_icon_tag('arrow-left'), employee_statistics_statistics_path, class: 'btn btn-sm btn-outline-primary mr-2', title: '返回员工统计总览', data: { turbolinks: false } %>
+        <%= link_to fa_icon_tag('close'), root_path, :class => 'card-header-close' %>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-12">
+                <div id="employee_monthly_statistics_form_wrapper">
+                    <%= form_tag request.path, :method => :get, :id => 'employee_monthly_statistics_form' do %>
+                        <div class="row mb-3">
+                            <div class="col-lg-6 col-md-12 text-right">
+                                <label class="text-smaller font-weight-bold mr-3">统计年份</label> 
+                                <el-date-picker 
+                                    v-model="search_form.year" 
+                                    @change="submit" 
+                                    type="year" 
+                                    size="small" 
+                                    value-format="yyyy" 
+                                    placeholder="选择年份" 
+                                    style="width: 70%; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" 
+                                    :clearable="false"
+                                    popper-class="date-picker-dropdown"
+                                ></el-date-picker> 
+                                <!-- 确保隐藏字段的值与Vue模型同步 -->
+                                <input type="hidden" name="year" :value="search_form.year">
+                                <input type="hidden" name="employee_id" value="<%= @employee_id %>">
+                                <input type="hidden" name="employee_name" value="<%= @employee_name %>">
+                            </div>
+                            <div class="col-lg-6 col-md-12">
+                                <el-button @click="submit" size="small" plain style="margin-top: 0;" type="primary">
+                                    <i class="el-icon-refresh-right"></i> 刷新
+                                </el-button>
+                            </div>
+                        </div>
+                    <% end %>
+                </div>
+                
+                <div class="table-responsive mt-4">
+                    <table class="table table-bordered table-hover">
+                        <thead class="bg-primary text-white">
+                            <tr>
+                                <th>月份</th>
+                                <th>访谈小时</th>
+                                <th>管理小时</th>
+                                <th>接收需求量</th>
+                                <th>转化率</th>
+                                <th>访谈总价</th>
+                                <th>专家支出</th>
+                                <th>专家单价</th>
+                                <th>个人总收入</th>
+                                <th>绩效倍数</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <% if @monthly_data && @monthly_data.any? %>
+                            <% @monthly_data.each do |data| %>
+                            <tr>
+                                <td><%= data[:month_name] %></td>
+                                <td><%= data[:interview_hours] || 0 %></td>
+                                <td><%= data[:manage_hours] || 0 %></td>
+                                <td><%= (data[:demand_hours] || 0).to_i %></td>
+                                <td><%= sprintf("%.2f", data[:conversion_rate] || 0) %>%</td>
+                                <td><%= number_to_currency(data[:total_income] || 0, unit: '¥') %></td>
+                                <td><%= number_to_currency(data[:expert_cost] || 0, unit: '¥') %></td>
+                                <td><%= number_to_currency(data[:expert_price] || 0, unit: '¥', precision: 2) %></td>
+                                <td><%= number_to_currency(data[:personal_income] || 0, unit: '¥') %></td>
+                                <td><%= sprintf("%.2f", data[:performance_multiplier] || 0) %></td>
+                            </tr>
+                            <% end %>
+                            <tr class="bg-primary text-white">
+                                <td>总计</td>
+                                <td><%= sprintf("%.2f", @total_interview_hours || 0) %></td>
+                                <td><%= sprintf("%.2f", @total_manage_hours || 0) %></td>
+                                <td><%= (@total_demand_hours || 0).to_i %></td>
+                                <td><%= sprintf("%.2f", @total_conversion_rate || 0) %>%</td>
+                                <td><%= number_to_currency(@total_income || 0, unit: '¥') %></td>
+                                <td><%= number_to_currency(@total_expert_cost || 0, unit: '¥') %></td>
+                                <td><%= number_to_currency(@total_expert_price || 0, unit: '¥', precision: 2) %></td>
+                                <td><%= number_to_currency(@total_personal_income || 0, unit: '¥') %></td>
+                                <td><%= sprintf("%.2f", @total_performance_multiplier || 0) %></td>
+                            </tr>
+                        <% else %>
+                            <tr>
+                                <td colspan="10" class="text-center">暂无数据</td>
+                            </tr>
+                        <% end %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 直接初始化Vue实例
+    var app = new Vue({
+        el: '#employee_monthly_statistics_form_wrapper',
+        data: {
+            search_form: {
+                // 直接使用服务器端提供的params值，确保与URL参数一致
+                year: '<%= params[:year] || Time.now.year %>'
+            }
+        },
+        mounted: function() {
+            // 确保表单提交后不会重置年份值
+            console.log('Vue mounted, year value:', this.search_form.year);
+            
+            // 确保el-date-picker显示正确的年份
+            var self = this;
+            this.$nextTick(function() {
+                // 获取URL参数中的年份值
+                const urlParams = new URLSearchParams(window.location.search);
+                const yearParam = urlParams.get('year');
+                if (yearParam) {
+                    // 确保search_form.year与URL参数一致
+                    self.search_form.year = yearParam;
+                    console.log('Updated year from URL:', yearParam);
+                }
+            });
+        },
+        methods: {
+            submit: function() {
+                if (!this.search_form.year) {
+                    console.warn('Year value is empty, using current year');
+                    this.search_form.year = '<%= Time.now.year %>';
+                }
+                console.log('Submitting form with year:', this.search_form.year);
+                // 确保隐藏字段的值与Vue模型同步
+                var yearInput = document.querySelector('input[name="year"]');
+                if (yearInput) {
+                    yearInput.value = this.search_form.year;
+                    console.log('Hidden field value updated:', yearInput.value);
+                    document.getElementById('employee_monthly_statistics_form').submit();
+                } else {
+                    console.error('Year input field not found');
+                }
+            }
+        }
+    });
+    
+    // 监听URL变化，确保刷新后年份选择器显示正确的值
+    window.addEventListener('popstate', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const yearParam = urlParams.get('year');
+        if (yearParam && app) {
+            app.search_form.year = yearParam;
+            console.log('URL changed, updated year:', yearParam);
+        }
+    });
+</script>

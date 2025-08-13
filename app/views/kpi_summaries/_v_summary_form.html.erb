@@ -1,0 +1,189 @@
+<div id="app" class="mb-2">
+    <el-row class="mb-2" :gutter="10">
+        <el-col :lg="4" :md="8">
+            <el-date-picker
+                v-model="kpi_summary.datetime"
+                @change="load_kpi_summary"
+                type="month"
+                size="small"
+                value-format="yyyy-MM-dd"
+                placeholder="选择月份"
+                style="width: 100%;"
+            />
+        </el-col>
+        <el-col :lg="4" :md="8">
+            <el-select
+                v-model="kpi_summary.user_id"
+                @change="load_kpi_summary"
+                size="small"
+                clearable
+                placeholder="选择员工"
+                style="width: 100%;"
+            >
+                <el-option
+                    v-for="item in users"
+                    :key="item[1]"
+                    :label="item[0]"
+                    :value="item[1]">
+                </el-option>
+            </el-select>
+        </el-col>
+    </el-row>
+    <el-row class="mb-2" :gutter="10">
+        <el-col :lg="8" :md="16">
+            <el-tree
+                v-if="init_data.name"
+                :data="[init_data]"
+                node-key="id"
+                :props="{ label: 'name', children: 'infos' }"
+                default-expand-all
+                :expand-on-click-node="false" style="width: 100%;">
+                <span class="c-tree-node" slot-scope="{ node, data }">
+                    <span :class="data.user_id ? 'text-bold' : ''">
+                        {{ data.name }}
+                        <el-tag v-if="data.user_id && !data.id" type="danger" size="mini">new</el-tag>
+                    </span>
+                    <span>
+                        <el-tag v-if="data.remark" size="small">{{ data.remark }}</el-tag>
+                        <el-input
+                            v-if="!data.user_id"
+                            v-model="data.price"
+                            @change="watch_price"
+                            :disabled="data.disabled"
+                            size="mini"
+                            type="number"
+                            placeholder="输入金额"
+                            clearable>
+                        </el-input>
+                    </span>
+                </span>
+            </el-tree>
+        </el-col>
+    </el-row>
+    <el-button type="primary" size="small" @click="submit" :disabled="!init_data.name">保存</el-button>
+    <el-link href="/kpi_summaries/v_index" :underline="false">
+        <el-button type="info" size="small">返回</el-button>
+    </el-link>
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            mode: '',  // new/edit
+            users: [],
+            kpi_summary: {
+                id: '<%= params[:kpi_summary_id] %>',
+                datetime: '',
+                user_id: ''
+            },
+            init_data: {}
+        },
+        mounted: function(){
+            this.$nextTick(function(){
+                let _this_ = this;
+                $.get(`/users/v_staff_options`, function(res) {
+                    if (res.status === 0) {
+                        _this_.users = res.data.users
+                        console.log('load users ok:', _this_.users)
+                    } else if (res.status === 1) {
+                        _this_.$message({ message: res.msg, type: 'error' })
+                    }
+                })
+                if (this.kpi_summary.id) {
+                    $.get(`/kpi_summaries/v_summary_show`, { kpi_summary_id: this.kpi_summary.id }, function (res) {
+                        _this_.kpi_summary = res.data.kpi_summary
+                        _this_.load_kpi_summary()
+                    })
+                    this.mode = 'edit'
+                    console.log('edit mode')
+                } else {
+                    this.mode = 'new'
+                    console.log('new mode')
+                }
+            })
+        },
+        methods: {
+            load_kpi_summary () {
+                if (this.kpi_summary.datetime && this.kpi_summary.user_id) {
+                    let _this_ = this
+                    $.get('/kpi_summaries/v_summary_init', { datetime: this.kpi_summary.datetime, user_id: this.kpi_summary.user_id }, function (res) {
+                        if (res.status === 0) {
+                            _this_.init_data = res.data
+                            _this_.watch_price()
+                            console.log('load init_data ok:', _this_.init_data)
+                        } else if (res.status === 1) {
+                            _this_.init_data = {}
+                            _this_.$message({ message: res.msg, type: 'error' })
+                        }
+                    })
+                } else {
+                    this.init_data = []
+                }
+            },
+            get_info (name) {
+                return this.init_data.infos.find(item => item.name === name)
+            },
+            watch_price () {
+                let h1 = this.get_info('访谈小时')
+                let h2 = this.get_info('额外小时')
+                let h3 = this.get_info('管理小时')
+                let maoli = this.get_info('总访谈毛利')
+                let shouru = this.get_info('个人总收入')
+                let gongzi = this.get_info('基础工资')
+                let jiangjin = this.get_info('当月奖金')
+                let shebao = this.get_info('当月社保')
+                let baoxiao = this.get_info('报销')
+                let jixiao = this.get_info('绩效倍数')
+                jiangjin.price = h1.price * 100 + h2.price * 100 + h3.price * 50
+                shouru.price = gongzi.price * 1 + jiangjin.price * 1 + shebao.price * 1 + baoxiao.price * 1
+                jixiao.price = (maoli.price * 1 / shouru.price * 1 || 0).toFixed(1)
+            },
+            submit () {
+                let _this_ = this
+                if (!this.kpi_summary.datetime) { 
+                    this.$message({ message: '请选择月份', type: 'warning' });
+                    return
+                }
+                if (!this.kpi_summary.user_id) {
+                    this.$message({ message: '请选择员工', type: 'warning' });
+                    return
+                }
+                let params = {
+                    datetime: this.init_data.datetime,
+                    user_id: this.init_data.user_id,
+                    infos: this.init_data.infos
+                }
+                $.post('/kpi_summaries/v_summary_update', params, function (res) {
+                    console.log('v_summary_update res:', res)
+                    if (res.status === 0) {
+                        _this_.kpi_summary = res.data.kpi_summary
+                        _this_.$message({ message: '提交成功', type: 'success' })
+                    } else if (res.status === 1) {
+                        _this_.$message({ message: res.msg, type: 'error' })
+                    }
+                })
+            }
+        }
+    })
+</script>
+
+<style>
+  .c-tree-node {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    padding-right: 8px;
+  }
+  .el-tree-node__content {
+    height: 30px;
+  }
+  .el-input.is-disabled .el-input__inner {
+    color: #606266;
+  }
+  .el-input {
+    width: auto;
+  }
+</style>

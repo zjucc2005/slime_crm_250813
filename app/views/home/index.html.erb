@@ -1,0 +1,18 @@
+<% if current_user.email == 'cinney.wu@hci-consulting.com' %>
+    <%= render partial: 'home/widgets/cinney_dashboard' %>
+<% elsif current_user.is_role?('su', 'admin', 'finance') %>
+    <%= render partial: 'home/widgets/admin_summary' %>
+    <%= render partial: 'home/widgets/admin_statistics_info' %>
+<% elsif current_user.is_role?('pm') %>
+    <%= render partial: 'home/widgets/pm_summary' %>
+    <%= render partial: 'home/widgets/ongoing_tasks' %>
+<% elsif current_user.is_role?('pa') %>
+    <%= render partial: 'home/widgets/pa_summary' %>
+    <%= render partial: 'home/widgets/ongoing_tasks' %>
+<% end %>
+
+<% if can? :new, Project %>
+  <%= link_to new_project_path, class: 'floating-add-btn', title: t('action.new_model', model: mt(:project)) do %>
+    <i class="fa fa-plus"></i>
+  <% end %>
+<% end %>

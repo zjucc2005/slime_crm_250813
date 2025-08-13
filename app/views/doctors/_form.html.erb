@@ -1,0 +1,214 @@
+<%= model_error_tag(@doctor) %>
+<div class="badge badge-info mb-3 px-4"><%= t(:base_info) %></div>
+<div class="row border-bottom mb-3">
+
+    <div class="col-12 form-group">
+        <span class="badge badge-light"><%= show_creator(@doctor) %></span>
+        <span class="badge badge-light"><%= show_timestamps(@doctor) %></span>
+    </div>
+
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :last_name, mt(:candidate, :name) %><span class="text-red">*</span>
+        <div class="form-group-range">
+            <div class="form-group-range-input">
+                <%= f.text_field :last_name, required: true, class: 'form-control', placeholder: "#{mt(:candidate, :last_name)}*" %>
+            </div>
+            <div class="form-group-range-input">
+                <%= f.text_field :first_name, class: 'form-control', placeholder: mt(:candidate, :first_name) %>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :nickname %>
+        <%= f.text_field :nickname, class: 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :category2, mt(:candidate, :category) %>
+        <%= f.select :category2, Doctor::CATEGORY.to_a.map(&:reverse), { include_blank: false }, class: 'form-control select2' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :gender %>
+        <%= f.select :gender, Candidate::GENDER.to_a.map(&:reverse), { include_blank: false }, class: 'form-control select2-gender-with-icon' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :date_of_birth %>
+        <%= f.text_field :date_of_birth, value: @doctor.date_of_birth.try(:strftime, '%F'), class: 'form-control datepicker', placeholder: 'yyyy-mm-dd' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :phone %>
+        <%= f.text_field :phone, class: 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :phone1 %>
+        <%= f.text_field :phone1, class: 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :email %>
+        <%= f.email_field :email, class: 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :wechat %>
+        <%= f.text_field :wechat, class: 'form-control' %>
+    </div>
+    <div class="col-12 form-group">
+        <%= f.label :file %>
+        <%= link_to @doctor.file.url, target: '_blank' do %><%= fa_icon_tag('download') %> <%= t(:file) %><% end if @doctor.file.present? %>
+        <%= f.file_field :file, class: 'form-control-file' %>
+    </div>
+    <div class="col-12 form-group">
+        <%= f.label :sign_file %>
+        <%= link_to @doctor.sign_file.url, target: '_blank' do %><%= fa_icon_tag('download') %> <%= t(:file) %><% end if @doctor.sign_file.present? %>
+        <%= f.file_field :sign_file, class: 'form-control-file', accept: 'image/jpeg,image/png' %>
+    </div>
+</div>
+
+<div class="badge badge-info mb-3 px-4"><%= t(:work_experience) %></div>
+<div class="row border-bottom mb-3">
+    <div class="col-3 form-group">
+        <%= label_tag :city, mt(:candidate, :city) %>
+        <%= f.text_field :city, readonly: true, class: 'form-control', id: 'candidate_city' %>
+    </div>
+    <div class="col-3 form-group">
+        <%= label_tag :org_cn, mt(:candidate_experience, :hospital) %><span class="text-red">*</span>
+        <%= select_tag :'exp[org_id]', options_for_select(@current_hospital_options || [], @exp.org_id), prompt: default_prompt, required: true, class: 'form-control select2-hospital-options' %>
+    </div>
+    <div class="col-3 form-group">
+        <%= label_tag :department, mt(:candidate_experience, :department) %><span class="text-red">*</span>
+        <%= select_tag :'exp[dep_id]', options_for_select(hospital_department_options(@exp.org_id), @exp.dep_id), prompt: default_prompt, required: true, class: 'form-control select2', id: 'exp_dep_id' %>
+    </div>
+    <div class="col-3 form-group">
+        <%= label_tag :title, mt(:candidate_experience, :title) %>
+        <%= text_field_tag :'exp[title]', @exp.title, class: 'form-control' %>
+    </div>
+    <div class="col-3 form-group">
+        <%= label_tag :title, mt(:candidate_experience, :title_hospital) %>
+        <%= text_field_tag :'exp[title1]', @exp.title1, class: 'form-control' %>
+    </div>
+</div>
+
+<div class="row border-bottom mb-3">
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :is_available %><span class="text-red">*</span>
+        <%= f.select :is_available, candidate_is_available_options, { include_blank: false }, class: 'form-control select2-boolean-with-icon' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :cpt %><span class="text-red">*</span>
+        <%= f.number_field :cpt, required: true, min: 0, step: 1, value: @doctor.cpt || 0, class: 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :cpt_taxed %><span class="text-red">*</span>
+        <%= f.select :cpt_taxed, boolean_options, { include_blank: false }, class: 'form-control select2-boolean-with-icon' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :currency %><span class="text-red">*</span>
+        <%= f.select :currency, currency_options, { include_blank: false }, class: 'form-control select2' %>
+    </div><div class="col-lg-3 col-6 form-group">
+        <%= f.label :is_kol %><span class="text-red">*</span>
+        <%= f.select :is_kol, boolean_options, { include_blank: false }, class: 'form-control select2-boolean-with-icon' %>
+    </div>
+    <div class="col-12 form-group">
+        <%= f.label :expertise %>
+        <%= f.text_area :expertise, class: 'form-control', rows: 2 %>
+    </div>
+    <div class="col-12 form-group">
+        <%= f.label :description %>
+        <%= f.text_area :description, class: 'form-control', rows: 4 %>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :is_yibao, '是否加入医保' %>
+        <%= f.select :is_yibao, boolean_options, { include_blank: false }, 
+                    class: 'form-control select2-boolean-with-icon', 
+                    onchange: 'toggleMedicalInsuranceFields()' %>
+    </div>
+    
+    <div id="medical_insurance_fields" style="display: none;" class="col-12">
+        <div class="badge badge-info mb-3 px-4">医保信息</div>
+        <div id="medical_insurance_records">
+            <%= f.fields_for :medical_insurance_infos do |mi_form| %>
+                <%= render 'candidates/medical_insurance_fields', f: mi_form %>
+            <% end %>
+        </div>
+        <div class="links mb-3">
+            <%= link_to_add_association '添加医保年份记录', f, :medical_insurance_infos, 
+                                        partial: 'candidates/medical_insurance_fields', 
+                                        class: 'btn btn-sm btn-outline-primary' %>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    function toggleMedicalInsuranceFields() {
+        // 尝试通过多种方式获取is_yibao的值
+        var isYibao = false;
+        
+        // 使用更通用的选择器，匹配所有与is_yibao相关的select元素
+        var isYibaoSelect = $('#doctor_is_yibao, select[name="doctor[is_yibao]"], select[id$="_is_yibao"]');
+        console.log('找到的select元素数量:', isYibaoSelect.length);
+        
+        if (isYibaoSelect.length > 0) {
+            isYibao = isYibaoSelect.val();
+            console.log('select元素的值:', isYibao);
+        } else {
+            // 尝试通过select2的方式获取
+            var select2Container = $('.select2-boolean-with-icon');
+            console.log('找到的select2元素数量:', select2Container.length);
+            
+            if (select2Container.length > 0) {
+                isYibao = select2Container.val();
+                console.log('select2元素的值:', isYibao);
+            }
+        }
+        
+        var fields = document.getElementById('medical_insurance_fields');
+        if (fields) {
+            // 处理各种可能的值类型：字符串'true'、数字1、布尔值true
+            var shouldShow = (isYibao === 'true' || isYibao === true || isYibao === 1 || isYibao === '1');
+            console.log('是否显示医保字段:', shouldShow);
+            fields.style.display = shouldShow ? 'block' : 'none';
+        }
+    }
+    
+    $(document).ready(function() {
+        toggleMedicalInsuranceFields();
+        
+        // 为select2添加change事件监听
+        $('select[name="doctor[is_yibao]"]').on('change', function() {
+            toggleMedicalInsuranceFields();
+        });
+        
+        // 如果使用了select2，也为select2添加事件监听
+        $('.select2-boolean-with-icon').on('select2:select', function() {
+            toggleMedicalInsuranceFields();
+        });
+    });
+</script>
+
+<script>
+    // 使用与change_hospital_for_doctor_form.js.erb兼容的选择器
+    $('select[name="exp[org_id]"]').change(function(){
+        console.log('医院选择框值改变:', this.value);
+        if(this.value){
+            $.get('/hospitals/' + this.value + '/change_hospital_for_doctor_form.js');
+        } else {
+            $('input#candidate_city').val('');
+            $('select#exp_dep_id').html('<option>Please select</option>');
+        }
+    });
+    
+    // 如果使用了select2，也为select2添加事件监听
+    $('.select2-hospital-options').on('select2:select', function(e){
+        console.log('select2医院选择:', e.params.data.id);
+        if(e.params.data.id){
+            $.get('/hospitals/' + e.params.data.id + '/change_hospital_for_doctor_form.js');
+        } else {
+            $('input#candidate_city').val('');
+            $('select#exp_dep_id').html('<option>Please select</option>');
+        }
+    });
+</script>
+
+

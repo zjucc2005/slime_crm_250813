@@ -1,0 +1,336 @@
+<div class="min-h-screen bg-gray-100 p-2">
+  <div class="max-w-full mx-auto">
+    <div class="grid grid-cols-12 gap-2">
+      <!-- 顶部KPI框 - 已更新为三个 -->
+      <div class="col-span-full grid grid-cols-3 gap-2 mb-2">
+    <!-- 当月推荐专家总个数 -->
+    <div class="bg-white rounded shadow flex">
+      <div class="w-12 h-auto bg-blue-500 flex items-center justify-center">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+        </svg>
+      </div>
+      <div class="p-2">
+        <div class="text-xl font-semibold"><%= @monthly_recommended_experts %></div>
+        <div class="text-gray-500 text-xs">当月推荐专家总个数</div>
+      </div>
+    </div>
+    
+    <!-- 需求人数 -->
+    <div class="bg-white rounded shadow flex">
+      <div class="w-12 h-auto bg-purple-500 flex items-center justify-center">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+        </svg>
+      </div>
+      <div class="p-2">
+        <div class="text-xl font-semibold"><%= @monthly_demand_number %></div>
+        <div class="text-gray-500 text-xs">需求人数</div>
+      </div>
+    </div>
+    
+    <!-- 收到需求总个数 -->
+    <div class="bg-white rounded shadow flex">
+      <div class="w-12 h-auto bg-green-500 flex items-center justify-center">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+        </svg>
+      </div>
+      <div class="p-2">
+        <div class="text-xl font-semibold"><%= @monthly_requirements_count %></div>
+        <div class="text-gray-500 text-xs">收到需求总个数</div>
+      </div>
+    </div>
+  </div>
+  
+      <!-- 本月新增部分 -->
+      <div class="col-span-full bg-white rounded shadow mb-2">
+        <div class="p-2 border-b">
+          <h2 class="text-sm font-semibold">
+            <i class="fa fa-long-arrow-up text-green"></i>
+            <%= t('dashboard.current_month_increase') %>
+          </h2>
+        </div>
+        
+        <div class="p-0">
+          <table class="table table-sm card-text border-bottom">
+            <thead>
+            <tr>
+                <th class="pl-3"><%= t('dashboard.category') %></th>
+                <th><%= t('dashboard.value') %></th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <% @current_month_count_infos.each do |info| %>
+                <tr>
+                    <td class="pl-3"><%= info[:name] %></td>
+                    <td>+ <%= info[:value] %></td>
+                    <td>
+                        <%= link_to(t('dashboard.detail'), info[:url], data: { turbolinks: false }) if info[:url].present? %>
+                    </td>
+                </tr>
+            <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+
+
+      <!-- 个人小时数和客户小时数表格 -->
+      <div class="col-span-full grid grid-cols-12 gap-2">
+        <!-- 个人小时数部分 -->
+        <div class="col-span-6 bg-white rounded shadow mb-2">
+      <div class="flex items-center justify-between p-2 border-b">
+        <h2 class="text-sm font-semibold">个人小时数</h2>
+        <select id="personal-month-filter" class="text-xs border border-gray-300 rounded px-2 py-1">
+          <% @month_options.each do |option| %>
+            <option value="<%= option[1] %>" <%= 'selected' if option[1] == Time.now.beginning_of_month.strftime('%Y-%m-%d') %>>
+              <%= option[0] %>
+            </option>
+          <% end %>
+        </select>
+      </div>
+      
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="bg-gray-50 border-b">
+              <th class="py-1 px-2 text-left">排名</th>
+              <th class="py-1 px-2 text-left">姓名</th>
+              <th class="py-1 px-2 text-left">访谈小时</th>
+              <th class="py-1 px-2 text-left">管理小时</th>
+              <th class="py-1 px-2 text-left">总小时数</th>
+              <th class="py-1 px-2 text-left">新专家率</th>
+              <th class="py-1 px-2 text-left">新专家人数</th>
+              <th class="py-1 px-2 text-left">转化率</th>
+            </tr>
+          </thead>
+          <tbody id="personal-ranking-tbody">
+            <% @current_month_task_ranking.each_with_index do |user_data, index| %>
+              <tr class="border-b hover:bg-gray-50">
+                <td class="py-1 px-2">
+                  <span class="inline-flex items-center justify-center w-4 h-4 rounded-full <%= index < 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800' %> text-xs font-semibold">
+                    <%= index + 1 %>
+                  </span>
+                </td>
+                <td class="py-1 px-2"><%= user_data[:username] %></td>
+                <td class="py-1 px-2"><%= (user_data[:interview_minutes] / 60.0).round(1) %>h</td>
+                <td class="py-1 px-2"><%= (user_data[:manage_minutes] / 60.0).round(1) %>h</td>
+                <td class="py-1 px-2 font-semibold text-blue-600"><%= (user_data[:total_minutes] / 60.0).round(1) %>h</td>
+                <td class="py-1 px-2"><%= (user_data[:new_expert_rate] * 100).round(1) %>%</td>
+                <td class="py-1 px-2"><%= user_data[:new_expert_count] || 0 %></td>
+                <td class="py-1 px-2"><%= (user_data[:zhuanhualv] * 100).round(1) %>%</td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+        <!-- 客户小时数部分 -->
+        <div class="col-span-6 bg-white rounded shadow mb-2">
+      <div class="flex items-center justify-between p-2 border-b">
+        <h2 class="text-sm font-semibold">客户小时数</h2>
+        <select id="client-month-filter" class="text-xs border border-gray-300 rounded px-2 py-1">
+          <% @month_options.each do |option| %>
+            <option value="<%= option[1] %>" <%= 'selected' if option[1] == Time.now.beginning_of_month.strftime('%Y-%m-%d') %>>
+              <%= option[0] %>
+            </option>
+          <% end %>
+        </select>
+      </div>
+      
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="bg-gray-50 border-b">
+              <th class="py-1 px-2 text-left">排名</th>
+              <th class="py-1 px-2 text-left">公司名称</th>
+              <th class="py-1 px-2 text-left">客户小时数</th>
+              <th class="py-1 px-2 text-left">客户费用</th>
+              <th class="py-1 px-2 text-left">客户转化率</th>
+            </tr>
+          </thead>
+          <tbody id="client-ranking-tbody">
+            <% @client_ranking.each_with_index do |client_data, index| %>
+              <tr class="border-b hover:bg-gray-50">
+                <td class="py-1 px-2">
+                  <span class="inline-flex items-center justify-center w-4 h-4 rounded-full <%= index < 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800' %> text-xs font-semibold">
+                    <%= index + 1 %>
+                  </span>
+                </td>
+                <td class="py-1 px-2"><%= client_data[:name] %></td>
+                 <td class="py-1 px-2"><%= client_data[:total_hours] %>h</td>
+                 <td class="py-1 px-2">¥<%= number_with_delimiter(client_data[:total_income]) %></td>
+                 <td class="py-1 px-2"><%= client_data[:completion_rate] %>%</td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+      </div>
+      
+      <!-- 进展中的任务部分 -->
+      <div class="col-span-full bg-white rounded shadow mb-2">
+    <div class="flex items-center p-2 border-b">
+      <h2 class="text-sm font-semibold">进展中的任务</h2>
+      <span class="ml-2 px-1.5 py-0.5 text-xs font-semibold bg-green-500 text-white rounded-full">
+        <%= @ongoing_project_tasks.count %>
+      </span>
+    </div>
+    
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs">
+        <thead>
+          <tr class="bg-gray-50 border-b">
+            <th class="py-1 px-2 text-left">ID</th>
+            <th class="py-1 px-2 text-left">项目名称</th>
+            <th class="py-1 px-2 text-left">项目编码</th>
+            <th class="py-1 px-2 text-left">客户名称</th>
+            <th class="py-1 px-2 text-left">类型</th>
+            <th class="py-1 px-2 text-left">形式</th>
+            <th class="py-1 px-2 text-left">专家</th>
+            <th class="py-1 px-2 text-left">任务开始时间</th>
+            <th class="py-1 px-2 text-left">时长</th>
+            <th class="py-1 px-2 text-left">收费时长</th>
+
+            <th class="py-1 px-2 text-left">状态</th>
+            <th class="py-1 px-2 text-left">项目经理</th>
+            <th class="py-1 px-2 text-left">项目助理</th>
+            <th class="py-1 px-2 text-left">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @ongoing_project_tasks.each do |task| %>
+            <tr class="border-b hover:bg-gray-50">
+              <td class="py-1 px-2"># <%= task.uid %></td>
+              <td class="py-1 px-2"><%= truncate(task.project.name, length: 8) %></td>
+              <td class="py-1 px-2"><%= task.project.code %></td>
+              <td class="py-1 px-2"><%= task.project.company.name_abbr %></td>
+              <td class="py-1 px-2"><%= project_task_category_badge(task.category) %></td>
+              <td class="py-1 px-2">
+                <span class="px-1 py-0.5 text-xs bg-gray-100 text-gray-800 rounded-full">
+                  <%= ProjectTask::INTERVIEW_FORM[task.interview_form] || '未知' %>
+                </span>
+              </td>
+              <td class="py-1 px-2"><%= task.expert&.name %></td>
+              <td class="py-1 px-2"><%= task.started_at&.strftime('%F %H:%M') if task.started_at %></td>
+              <td class="py-1 px-2"><%= task.duration %></td>
+              <td class="py-1 px-2"><%= task.charge_duration %></td>
+
+              <td class="py-1 px-2"><%= project_task_status_badge(task.status) %></td>
+              <td class="py-1 px-2"><%= task.pm&.name_cn %></td>
+              <td class="py-1 px-2"><%= task.creator&.name_cn %></td>
+              <td class="py-1 px-2">
+                <%= link_to edit_project_task_path(task), class: "px-2 py-0.5 text-xs bg-gray-200 hover:bg-gray-300 rounded" do %>
+                  编辑
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="text-center text-bold">
+      <%= link_to '···', '/statistics/ongoing_project_tasks', :title => '查看全部' %>
+    </div>
+  </div>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript for dynamic filtering -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 个人小时数筛选
+    document.getElementById('personal-month-filter').addEventListener('change', function() {
+      const selectedMonth = this.value;
+      fetch(`/personal_ranking_ajax?month=${selectedMonth}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        updatePersonalRankingTable(data.ranking);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    });
+
+    // 客户小时数筛选
+    document.getElementById('client-month-filter').addEventListener('change', function() {
+      const selectedMonth = this.value;
+      fetch(`/client_ranking_ajax?month=${selectedMonth}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        updateClientRankingTable(data.client_ranking);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    });
+
+    function updatePersonalRankingTable(ranking) {
+      const tbody = document.getElementById('personal-ranking-tbody');
+      tbody.innerHTML = '';
+      
+      ranking.forEach((user, index) => {
+        const rankClass = index < 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800';
+        const row = `
+          <tr class="border-b hover:bg-gray-50">
+            <td class="py-1 px-2">
+              <span class="inline-flex items-center justify-center w-4 h-4 rounded-full ${rankClass} text-xs font-semibold">
+                ${index + 1}
+              </span>
+            </td>
+            <td class="py-1 px-2">${user.username}</td>
+            <td class="py-1 px-2">${(user.interview_minutes / 60.0).toFixed(1)}h</td>
+            <td class="py-1 px-2">${(user.manage_minutes / 60.0).toFixed(1)}h</td>
+            <td class="py-1 px-2 font-semibold text-blue-600">${(user.total_minutes / 60.0).toFixed(1)}h</td>
+            <td class="py-1 px-2">${(user.new_expert_rate * 100).toFixed(1)}%</td>
+            <td class="py-1 px-2">${user.new_expert_count || 0}</td>
+            <td class="py-1 px-2">${(user.zhuanhualv * 100).toFixed(1)}%</td>
+          </tr>
+        `;
+        tbody.innerHTML += row;
+      });
+    }
+
+    function updateClientRankingTable(ranking) {
+      const tbody = document.getElementById('client-ranking-tbody');
+      tbody.innerHTML = '';
+      
+      ranking.forEach((client, index) => {
+        const rankClass = index < 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800';
+        const row = `
+          <tr class="border-b hover:bg-gray-50">
+            <td class="py-1 px-2">
+              <span class="inline-flex items-center justify-center w-4 h-4 rounded-full ${rankClass} text-xs font-semibold">
+                ${index + 1}
+              </span>
+            </td>
+            <td class="py-1 px-2">${client.name}</td>
+            <td class="py-1 px-2">${client.total_hours}h</td>
+            <td class="py-1 px-2">¥${client.total_income.toLocaleString()}</td>
+            <td class="py-1 px-2">${client.completion_rate}%</td>
+          </tr>
+        `;
+        tbody.innerHTML += row;
+      });
+    }
+  });
+</script>

@@ -1,0 +1,88 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('credit-card') %> <%= t('activerecord.models.prepaid_client') %></h5>
+    </div>
+
+    <div class="card-body">
+        <div id="app">
+            <el-table :data="prepaidClients" border stripe>
+                <el-table-column prop="company.name" label="客户名称">
+                    <template slot-scope="scope">
+                        {{ scope.row.company.name || '-' }}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="total_hours" label="已购买小时数">
+                    <template slot-scope="scope">
+                        {{ scope.row.total_hours || '-' }}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="used_hours" label="已使用小时数">
+                    <template slot-scope="scope">
+                        {{ scope.row.used_hours || '-' }}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="advance_payment_hours" label="代付小时数">
+                    <template slot-scope="scope">
+                        {{ scope.row.advance_payment_hours || '-' }}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="remaining_hours" label="剩余小时数">
+                    <template slot-scope="scope">
+                        {{ scope.row.remaining_hours || '-' }}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="invoice_amount" label="开票金额">
+                    <template slot-scope="scope">
+                        {{ scope.row.invoice_amount || '-' }}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="invoice_date" label="开票时间">
+                    <template slot-scope="scope">
+                        {{ scope.row.invoice_date ? new Date(scope.row.invoice_date).toLocaleDateString('zh-CN') : '-' }}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="invoice_number" label="发票号码">
+                    <template slot-scope="scope">
+                        {{ scope.row.invoice_number || '-' }}
+                    </template>
+                </el-table-column>
+                <el-table-column label="发票附件">
+                    <template slot-scope="scope">
+                        <el-link v-if="scope.row.invoice_file_url" :href="scope.row.invoice_file_url" target="_blank" type="primary">查看</el-link>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="expected_payment_date" label="预计收款"></el-table-column>
+                <el-table-column label="预付费合同">
+                    <template slot-scope="scope">
+                        <el-link v-if="scope.row.contract_file_url" :href="scope.row.contract_file_url" target="_blank" type="primary">查看</el-link>
+                    </template>
+                </el-table-column>
+                <el-table-column label="操作" width="150">
+                    <template slot-scope="scope">
+                        <el-button-group>
+                            <el-button size="mini" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
+                        </el-button-group>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </div>
+    </div>
+</div>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: {
+            prepaidClients: <%= raw @companies.to_json %>
+        },
+        methods: {
+            handleEdit(row) {
+                if (row.id) {
+                    window.location.href = `/prepaid_clients/${row.id}/edit`;
+                } else {
+                    window.location.href = `/prepaid_clients/new?company_id=${row.company.id}`;
+                }
+            }
+        }
+    })
+</script>

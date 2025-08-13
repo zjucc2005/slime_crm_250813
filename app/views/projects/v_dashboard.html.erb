@@ -1,0 +1,153 @@
+<div id="app">
+    <div class="card p-2 mb-2">
+        <table class="table table-sm table-bordered nowrap card-text">
+            <thead>
+            <tr>
+                <th>公司简称</th>
+                <th>项目名称</th>
+                <th>项目编码</th>
+                <th>客户联系人</th>
+                <th>PM</th>
+                <th>需求类型</th>
+                <th>需求人数</th>
+                <th>创建时间</th>
+                <th>操作员</th>
+                <th>需求状态</th>
+                <th>紧急程度</th>
+                <th>更新状态</th>
+                <th>需求内容</th>
+            </tr>
+            </thead>
+            <tbody>
+                <template v-for="(project, i) in projects">
+                    <template v-if="project.project_requirements.length" >
+                        <tr v-for="(req, j) in project.project_requirements" :key="req.id">
+                            <template v-if="j===0">
+                                <td :rowspan="project.project_requirements.length">{{ project.company_name_abbr }}</td>
+                                <td :rowspan="project.project_requirements.length">
+                                    <el-link :href="`/projects/${project.id}`" target="_blank" type="primary">
+                                        {{ project.name | truncate(30) }}
+                                    </el-link>
+                                </td>
+                                <td :rowspan="project.project_requirements.length">{{ project.code }}</td>
+                                <td :rowspan="project.project_requirements.length">{{ project.client_contact }}</td>
+                                <td :rowspan="project.project_requirements.length">{{ project.pm_name }}</td>
+                            </template>
+                            <td>{{ req.category }}</td>
+                            <td>{{ req.demand_number }}</td>
+                            <td>{{ req.created_at }}</td>
+                            <td>{{ req.operator }}</td>
+                            <td>
+                                <span :class="`badge badge-${{ 'ongoing': 'success', 'finished': 'secondary', 'unfinished': 'danger'}[req.status]}`">
+                                    {{ req_status_dict[req.status] }}
+                                </span>
+                            </td>
+                            <td>
+                                <el-switch
+                                  v-model="req.priority"
+                                  active-color="#dc3545"
+                                  :active-value="1"
+                                  :inactive-value="0"
+                                  @change="update_priority($event, req.id)"
+                                >
+                                </el-switch>
+                            </td>
+                            <td></td>
+                            <td>
+                                <el-link @click="show_drawer(req.title, req.content)" type="primary">
+                                    {{ req.title | truncate(20) }}
+                                </el-link>
+                            </td>
+                        </tr>
+                    </template>
+                    <template v-else>
+                        <tr>
+                            <td>{{ project.company_name_abbr }}</td>
+                            <td>
+                                <el-link :href="`/projects/${project.id}`" target="_blank" type="primary">
+                                    {{ project.name | truncate(30) }}
+                                </el-link>
+                            </td>
+                            <td>{{ project.code }}</td>
+                            <td>{{ project.client_contact }}</td>
+                            <td>{{ project.pm_name }}</td>
+                            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                        </tr>
+                    </template>
+                </template>
+            </tbody>
+        </table>
+    </div>
+
+    <el-drawer
+      :title="drawer.title"
+      :visible.sync="drawer.visible"
+      direction="rtl"
+      size="40%"
+      >
+      <div class="drawer-content">
+          {{ drawer.content }}
+      </div>
+    </el-drawer>
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            projects: [],
+            search_form: {},
+            drawer: {
+                title: '',
+                content: '',
+                visible: false
+            },
+            req_status_dict: <%= ProjectRequirement::STATUS.to_json.html_safe %>
+        },
+        mounted: function () {
+            this.$nextTick(function(){
+                console.log('mounted')
+                this.load_projects()
+            })
+        },
+        unmounted: function () {
+            console.log('unmounted')
+        },
+        methods: {
+            load_projects () {
+                let _this_ = this;
+                console.log('load dashboard data req:', this.search_form)
+                $.get('/projects/v_dashboard_data', this.search_form, function (res) {
+                    _this_.projects = res.data.projects
+                    console.log('load dashboard data:', res)
+                })
+            },
+            show_drawer (title, content) {
+                this.drawer = {
+                    title: title,
+                    content: content,
+                    visible: true
+                }
+            },
+            update_priority (priority, req_id) {
+                let _this_ = this;
+                console.log('update priority req:', [req_id, priority])
+                $.post('/projects/v_dashboard_update_priority', { project_requirement_id: req_id, priority: priority }, function (res) {
+                    // _this_.projects = res.data.projects
+                    console.log('load priority res:', res)
+                } )
+            }
+        }
+    })
+</script>
+
+<style>
+    .drawer-content {
+        padding: 0 20px;
+        font-size: 0.9rem;
+        white-space: pre-line;
+    }
+    .table td {
+        vertical-align: middle;
+    }
+</style>

@@ -1,0 +1,73 @@
+<%= model_error_tag(@hospital) %>
+<%= hidden_field_tag :return_to, params[:return_to] %>
+<% if controller.action_name == 'new' %>
+<div class="row">
+    <div class="col-3 form-group">
+        <%= f.label :name %><span class="text-red">*</span>
+        <%= f.text_field :name, required: true, class: 'form-control' %>
+    </div>
+</div>
+<div class="row">
+    <div class="col-3 form-group">
+        <%= f.label :province %><span class="text-red">*</span>
+        <%= select_tag :ld_province_id, options_for_select(@current_province_options || [], params[:ld_province_id]),
+                       onchange: "loadChildrenForProvince(this.value, #{params[:ld_city_id]})",
+                       prompt: default_prompt, required: true, class: 'form-control select2-province-options' %>
+    </div>
+    <div class="col-3 form-group">
+        <%= f.label :city %><span class="text-red">*</span>
+        <%= select_tag :ld_city_id, options_for_select(ld_city_options(params[:ld_province_id]), params[:ld_city_id]), prompt: default_prompt, required: true, class: 'form-control select2' %>
+    </div>
+    <div class="col-3 form-group">
+        <%= f.label :category %><span class="text-red">*</span>
+        <%= f.select :category, Hospital::CATEGORY, { prompt: default_prompt }, required: true, class: 'form-control select2' %>
+    </div>
+    <div class="col-3 form-group">
+        <%= f.label :level %>
+        <%= f.select :level, hospital_level_options, { prompt: default_prompt }, required: true, class: 'form-control select2' %>
+    </div>
+</div>
+<% else %>
+<div class="row">
+    <div class="col-3 form-group">
+        <%= f.label :name %><span class="text-red">*</span>
+        <%= f.text_field :name, readonly: true, class: 'form-control' %>
+    </div>
+</div>
+<div class="row">
+    <div class="col-3 form-group">
+        <%= f.label :province %><span class="text-red">*</span>
+        <%= f.text_field :province, readonly: true, class: 'form-control' %>
+    </div>
+    <div class="col-3 form-group">
+        <%= f.label :city %><span class="text-red">*</span>
+        <%= f.text_field :city, readonly: true, class: 'form-control' %>
+    </div>
+    <div class="col-3 form-group">
+        <%= f.label :category %><span class="text-red">*</span>
+        <%= f.text_field :category, readonly: true, class: 'form-control' %>
+    </div>
+    <div class="col-3 form-group">
+        <%= f.label :level %>
+        <%= f.text_field :level, readonly: true, class: 'form-control' %>
+    </div>
+</div>
+<% end %>
+
+<div class="row">
+    <div class="col-12 form-group">
+        <%= f.label :kwlist %><span class="text-red">(别名之间用半角 , 隔开)</span>
+        <%= f.text_field :kwlist, value: @hospital.kwlist.join(','), class: 'form-control' %>
+    </div>
+</div>
+
+<script>
+    $('#hospital_category').change(function(e) {
+        let ele = document.getElementById('hospital_level');
+        if (e.target.value === '私立') {
+            ele.required = false
+        } else {
+            ele.required = true
+        }
+    })
+</script>

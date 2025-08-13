@@ -1,0 +1,39 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('tags') %> <%= t('action.edit_model', :model => mt(:project_task)) %></h5>
+        <%= link_to fa_icon_tag('close'), 'javascript:history.go(-1);', :class => 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <%= form_for @project_task, remote: true do |f| %>
+            <%= model_error_tag(@project_task) %>
+
+            <div class="form-group">
+                <span class="badge badge-light"><%= show_creator(@project_task) %></span>
+                <span class="badge badge-light"><%= show_timestamps(@project_task) %></span>
+            </div>
+
+            <%= render :partial => 'edit_form_charge', :locals => { :f => f } %>
+            <%= render :partial => 'edit_form_payment', :locals => { :f => f } %>
+
+            <div class="form-group mb-0 d-flex justify-content-between">
+                <div>
+                    <%= submit_tag t('action.save_draft'), :class => 'btn btn-info' %>
+                    <% if current_user.is_role? *%w[su admin pm] %>
+                        <%= submit_tag t('action.submit_and_confirm'), :data => { :confirm => t(:sure_to_submit) }, :class => 'btn btn-primary' %>
+                    <% end %>
+                    <%= link_to t('action.back'), 'javascript:history.go(-1);', :class => 'btn btn-secondary' %>
+                </div>
+                <div>
+                    <%= link_to t('action.cancel'), cancel_project_task_path(@project_task), :method => :put,
+                                :data => { :confirm => t('sure_to_cancel') }, :class => 'btn btn-danger' %>
+                </div>
+            </div>
+        <% end %>
+    </div>
+</div>
+
+<div id="add_cost_modal_wrapper">
+    <%= render :partial => 'add_cost_modal', :locals => { :project_task => @project_task } %>
+</div>
+

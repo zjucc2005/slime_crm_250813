@@ -1,0 +1,18 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('user') %> <%= "#{t('action.new_model', :model => mt(:user))}" %></h5>
+        <%= link_to fa_icon_tag('close'), users_path, :class => 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <%= form_for @user, :url => admin_create_users_path do |f| %>
+            <%= model_error_tag(@user) %>
+            <%= render :partial => 'form', :locals => { :f => f } %>
+
+            <div class="form-group mb-0">
+                <%= f.submit t('action.submit'), :class => 'btn btn-submit' %>
+                <%= link_to t('action.back'), users_path, :class => 'btn btn-back' %>
+            </div>
+        <% end %>
+    </div>
+</div>

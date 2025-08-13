@@ -1,0 +1,5 @@
+$('select#hospital_id').html('<%= @hospital_options.html_safe %>');
+<% if params[:hospital_id].present? %>
+  $('select#hospital_id').val('<%= params[:hospital_id] %>').change();
+<% end %>
+console.log('load hospital options:ok!');

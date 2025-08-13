@@ -1,0 +1,86 @@
+<%= form_for @prepaid_client do |f| %>
+  <div class="card-body">
+    <% if @prepaid_client.errors.any? %>
+      <div class="alert alert-danger">
+        <ul>
+          <% @prepaid_client.errors.full_messages.each do |msg| %>
+            <li><%= msg %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="row">
+      <div class="col-md-6 form-group">
+        <%= f.label :company_id, t(:company) %>
+        <%= f.collection_select :company_id, Company.all, :id, :name, {}, class: 'form-control' %>
+      </div>
+
+      <div class="col-md-6 form-group">
+        <%= f.label :total_hours, '已购买小时数' %>
+        <%= f.number_field :total_hours, class: 'form-control', step: '0.01' %>
+      </div>
+
+      <div class="col-md-6 form-group">
+        <%= f.label :advance_payment_hours, '代付小时数' %>
+        <%= f.number_field :advance_payment_hours, class: 'form-control', step: '0.01', value: @prepaid_client.advance_payment_hours || 0 %>
+      </div>
+
+      <div class="col-md-6 form-group">
+        <%= f.label :invoice_amount, '开票金额' %>
+        <%= f.number_field :invoice_amount, class: 'form-control', step: '0.01' %>
+      </div>
+
+      <div class="col-md-6 form-group">
+        <%= f.label :invoice_date, '开票时间' %>
+        <%= f.date_field :invoice_date, class: 'form-control' %>
+      </div>
+
+      <div class="col-md-6 form-group">
+        <%= f.label :invoice_number, '发票号码' %>
+        <%= f.text_field :invoice_number, class: 'form-control' %>
+      </div>
+
+      <div class="col-md-6 form-group">
+        <%= f.label :invoice_file, '发票文件' %>
+        <%= f.file_field :invoice_file, class: 'form-control' %>
+        <% if @prepaid_client.invoice_file.present? %>
+          <div class="mt-2">
+            <%= link_to '下载发票', @prepaid_client.invoice_file.url, class: 'btn btn-link', target: '_blank' %>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="col-md-6 form-group">
+        <%= f.label :contract_file, '合同文件' %>
+        <%= f.file_field :contract_file, class: 'form-control' %>
+        <% if @prepaid_client.company.present? && @prepaid_client.company.contracts.available.present? %>
+          <% contract = @prepaid_client.company.contracts.available.first %>
+          <div class="mt-2">
+            <%= link_to '下载合同', contract.file.url, class: 'btn btn-link', target: '_blank' %>
+            <div class="small text-muted">
+              <div>合同期限：<%= contract.started_at.to_date %> 至 <%= contract.ended_at.to_date %></div>
+              <div>收费标准：<%= contract.charge_rate %> <%= contract.currency %>/小时</div>
+            </div>
+          </div>
+        <% else %>
+          <div class="alert alert-warning">该公司暂无可用合同，请上传新合同</div>
+        <% end %>
+      </div>
+
+
+
+      <div class="col-md-6 form-group">
+        <%= f.label :expected_payment_date, '预计收款' %>
+        <%= f.date_field :expected_payment_date, class: 'form-control' %>
+      </div>
+
+
+    </div>
+  </div>
+
+  <div class="card-footer">
+    <%= f.submit t('action.save'), class: 'btn btn-primary' %>
+    <%= link_to t('action.back'), prepaid_clients_path, class: 'btn btn-default' %>
+  </div>
+<% end %>

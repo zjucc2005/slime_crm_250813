@@ -1,0 +1,671 @@
+<div id="app">
+    <el-card class="box-card top-bar-cc mb-1">
+        <% if can?(:new, Project) %>
+            <el-button @click="handleProjectNew" type="primary" size="mini" icon="el-icon-plus">新增项目</el-button>
+        <% else %>
+            <div></div><!--占位dom-->
+        <% end %>
+        <div>
+            <% if current_user.is_role?('su', 'admin', 'pm') %>
+                <el-badge :value="rec_count" :hidden="rec_count == 0" class="mr-3">
+                    <el-button
+                        @click="handleSearchRec"
+                        :type="search_form.is_rec ? 'danger' : ''"
+                        :icon="search_form.is_rec ? 'el-icon-check' : ''"
+                        size="mini" plain>
+                        只看推荐
+                    </el-button>
+                </el-badge>
+            <% end %>
+            <el-input v-model="search_form._v" placeholder="请输入内容" size="mini" style="width: 640px;" clearable class="input-with-select">
+                <el-select v-model="search_form._k" slot="prepend" placeholder="请选择" style="width: 160px;">
+                    <el-option value="name" label="项目名称"></el-option>
+                    <el-option value="code" label="项目编码"></el-option>
+                    <el-option value="company_name_abbr" label="公司简称"></el-option>
+                </el-select>
+            </el-input>
+            <el-button @click="handleSearch" type="primary" size="mini" icon="el-icon-search">搜索</el-button>
+            <el-button @click="handleSearchReset" size="mini" icon="el-icon-refresh" title="重置">重置</el-button>
+        </div>
+    </el-card>
+    <!-- 进展中的项目 -->
+    <el-card v-for="project in projects" :key="project.id" class="box-card mb-1">
+        <div slot="header" class="header-cc">
+            <el-link :href="`/projects/${project.id}`" target="_blank" type="primary">{{ project.name }}</el-link>
+            <div>
+                <% if current_user.is_role?('su', 'admin', 'pm') %>
+                    <el-button @click="handleCallOverview(project.id)" size="mini" icon="el-icon-star-on">推荐约访总览</el-button>
+                    <el-button @click="handleReqNew(project.id);" size="mini" type="primary" icon="el-icon-plus">
+                        新增需求
+                    </el-button>
+                <% end %>
+            </div>
+        </div>
+        <div>
+            <el-row :gutter="10">
+                <el-col :span="8">
+                    <el-descriptions :column="2" size="mini" border>
+                        <el-descriptions-item label="项目编码">{{ project.code }}</el-descriptions-item>
+                        <el-descriptions-item label="PM">{{ project.pm_name }}</el-descriptions-item>
+                        <el-descriptions-item label="公司简称">{{ project.company_name_abbr }}</el-descriptions-item>
+                        <el-descriptions-item label="客户联系人">{{ project.client_contact }}</el-descriptions-item>
+                        <el-descriptions-item label="项目状态">
+                            <el-tag :type="{ 'initialized': 'warning', 'ongoing': 'success', 'finished': 'info', 'billing': 'primary', 'billed': 'info'}[project.status]" size="mini">
+                                    {{ status_dict[project.status] }}
+                                </el-tag>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="总收费时长">{{ project.total_charge_duration }} 小时</el-descriptions-item>
+                        <el-descriptions-item label="Premium Rate">{{ project.premium_rate * 100 }} %</el-descriptions-item>
+                        <el-descriptions-item label="总费用">{{ project.total_price }}</el-descriptions-item>
+                        <el-descriptions-item label="更新时间">{{ project.updated_at }}</el-descriptions-item>
+                    </el-descriptions>
+                </el-col>
+                <el-col :span="16">
+                    <el-table :data="project.project_requirements" size="mini" border stripe>
+                        <el-table-column prop="category" label="需求类型"></el-table-column>
+                        <el-table-column prop="demand_number" label="需求人数/推荐/已约">
+                            <template slot-scope="scope">
+                                {{ scope.row.demand_number }} /
+                                {{ scope.row.call_records.filter(c => c.rec_status !== 'init').length }} /
+                                {{ scope.row.call_records.filter(c => c.rec_status === 'succ').length }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="created_at" label="创建时间">
+                            <template slot-scope="scope">
+                                <el-tooltip :content="scope.row.created_at.split(' ')[1]" placement="right">
+                                    <el-button size="mini" type="text">{{ scope.row.created_at.split(' ')[0] }}</el-button>
+                                </el-tooltip>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="operator" label="操作员"></el-table-column>
+                        <el-table-column prop="status" label="需求状态">
+                            <template slot-scope="scope">
+                                <% if current_user.is_role?('su', 'admin', 'pm') %>
+                                    <el-dropdown trigger="click">
+                                        <span>
+                                            <el-tag :type="req_status_tag_type[scope.row.status]" size="mini">
+                                                {{ req_status_dict[scope.row.status] }}
+                                            </el-tag>
+                                            <i class="el-icon-arrow-down el-icon--right"></i>
+                                        </span>
+                                        <el-dropdown-menu slot="dropdown">
+                                            <el-dropdown-item v-for="(val, key) in req_status_dict" :key="key">
+                                                <el-tag @click="update_req_status(key, scope.row)" :type="req_status_tag_type[key]" size="mini">
+                                                    {{ req_status_dict[key] }}
+                                                </el-tag>
+                                            </el-dropdown-item>
+                                        </el-dropdown-menu>
+                                    </el-dropdown>
+                                <% else %>
+                                    <el-tag :type="req_status_tag_type[scope.row.status]" size="mini">
+                                        {{ req_status_dict[scope.row.status] }}
+                                    </el-tag>
+                                <% end %>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="priority" label="紧急程度">
+                            <template slot-scope="scope">
+                                <% if current_user.is_role?('su', 'admin', 'pm') %>
+                                    <el-switch
+                                        v-model="scope.row.priority"
+                                        active-color="#dc3545"
+                                        :active-value="1"
+                                        :inactive-value="0"
+                                        @change="update_req_priority($event, scope.row)"
+                                    >
+                                    </el-switch>
+                                <% end %>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="更新状态">
+                            <template slot-scope="scope">
+                                <% if current_user.is_role?('su', 'admin', 'pm') %>
+                                    <el-button 
+                                        v-if="scope.row.call_records.filter(c =>  c.rec_status === 'recommended').length"
+                                        @click="handleCallOverview(project.id, scope.row.id)"
+                                        type="danger" size="mini" icon="el-icon-star-on">
+                                        + {{ scope.row.call_records.filter(c =>  c.rec_status === 'recommended').length }}
+                                    </el-button>
+                                <% end %>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="title" label="需求内容" min-width="120">
+                            <template slot-scope="scope">
+                                <el-link @click="show_drawer(scope.row)" type="primary">
+                                    {{ scope.row.title | truncate(20) }}
+                                </el-link>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="操作" width="100">
+                            <template slot-scope="scope">
+                                <el-button @click="handleCallShow(scope.row.call_records)" size="mini" icon="el-icon-phone" circle></el-button>
+                                <% if current_user.is_role?('su', 'admin', 'pm') %>
+                                    <el-button @click="handleReqEdit(scope.row)" type="primary" size="mini" icon="el-icon-edit" circle title="编辑"></el-button>
+                                <% end %>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </el-col>
+            </el-row>
+        </div>
+    </el-card>
+
+    <el-pagination
+        :total="search_form.total"
+        :current-page.sync="search_form.page"
+        :page-size.sync="search_form.per_page"
+        :page-sizes="[10, 20, 50]"
+        @current-change="handlePageChange"
+        @size-change="handlePageChange"
+        background
+        layout="total, sizes, prev, pager, next, jumper"
+        style="text-align: center;"
+        >
+    </el-pagination>
+
+    <!-- 需求内容详情 -->
+    <el-drawer :title="drawer.title" :visible.sync="drawer.visible" direction="rtl" size="40%">
+        <div class="drawer-content">{{ drawer.content }}</div>
+        <div class="drawer-files">
+            <div v-for="(url, index) in drawer.files" :key="index">
+                {{ `附件${index + 1}:` }} <el-link :href="url" type="primary" target="_blank">{{ url | url_basename }}</el-link>
+            </div>
+        </div>
+    </el-drawer>
+
+    <!-- 新增需求form -->
+    <el-dialog :title="reqForm.id ? '编辑需求' : '新增需求'" :visible.sync="reqFormVisible" :close-on-click-modal="false">
+        <el-form ref="reqForm" :model="reqForm" size="small" label-width="80px">
+            <el-form-item label="标题" prop="title" :rules="reqFormRules.title">
+                <el-input v-model="reqForm.title" clearable></el-input>
+            </el-form-item>
+            <el-form-item label="内容" prop="content" :rules="reqFormRules.content">
+                <el-input v-model="reqForm.content" type="textarea" :rows="5" clearable></el-input>
+            </el-form-item>
+            <el-form-item label="需求类型" prop="category" :rules="reqFormRules.category">
+                <el-select v-model="reqForm.category" placeholder="Please select" clearable>
+                    <el-option v-for="opt in req_categories" :key="opt" :label="opt" :value="opt"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="需求人数" prop="demand_number" :rules="reqFormRules.demand_number">
+                <el-input-number v-model="reqForm.demand_number" controls-position="right" :min="1"></el-input-number>
+            </el-form-item>
+            <el-form-item label="操作员" prop="operator_id" :rules="reqFormRules.operator_id">
+                <el-select v-model="reqForm.operator_id" placeholder="Please select" clearable>
+                    <el-option v-for="opt in user_options" :key="opt[1]" :label="opt[0]" :value="opt[1]"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-upload
+                action="/"
+                :file-list="reqForm.fileList"
+                :limit="3"
+                :auto-upload="false"
+                :on-change="handleReqFileChange"
+                :on-remove="handleReqFileChange"
+            >
+              <el-button slot="trigger" size="mini" type="primary">选取文件</el-button>
+              <div slot="tip" class="el-upload__tip">最多选择3个文件上传</div>
+            </el-upload>
+        </el-form>
+        <span slot="footer">
+            <el-button size="mini" @click="reqFormVisible = false">取消</el-button>
+            <el-button type="primary" size="mini" @click="handleReqSubmit">确定</el-button>
+        </span>
+    </el-dialog>
+
+    <!-- 通话记录 table -->
+    <el-dialog title="通话记录" :visible.sync="callShowVisible" :close-on-click-modal="false" width="80%">
+        <el-table :data="callShow" size="mini" border stripe>
+            <el-table-column prop="category" label="类型" width="72">
+                <template slot-scope="scope">
+                    <span v-if="scope.row.category === 'doctor'" ><i class="fa fa-user-circle text-danger"></i> 医生</span>
+                    <span v-else><i class="fa fa-user-circle text-primary"></i> 专家</span>
+                </template>
+            </el-table-column>
+            <el-table-column prop="name" label="姓名" width="140">
+                <template slot-scope="scope">
+                    <template v-if="scope.row.candidate_id">
+                        <el-tag size="mini" plain>已入库</el-tag>
+                        <el-link :href="`/${scope.row.category === 'doctor' ? 'doctors' : 'candidates'}/${scope.row.candidate_id}`" target="_blank">{{ scope.row.name }}</el-link>
+                    </template>
+                    <template v-else>{{ scope.row.name }}</template>
+                </template>
+            </el-table-column>
+            <el-table-column prop="company" label="公司/医院" width="140"></el-table-column>
+            <el-table-column prop="department" label="部门/科室" width="140"></el-table-column>
+            <el-table-column prop="title" label="职位" width="140"></el-table-column>
+            <el-table-column prop="memo" label="沟通记录">
+                <template slot-scope="scope">
+                    <div v-for="(m, index) in scope.row.memo_logs">{{ m[1] }}</div>
+                </template>
+            </el-table-column>
+            <el-table-column prop="phone" label="电话" width="140">
+                <template slot-scope="scope">
+                    <span v-if="scope.row.phone_visible">{{ scope.row.phone }}</span>
+                    <el-link v-else @click="show_phone(scope.row)" type="primary" class="cc-link">查看联系方式</el-link>
+                </template>
+            </el-table-column>
+            <el-table-column prop="status" label="通话状态" width="90">
+                <template slot-scope="scope">
+                    <el-tag :type="call_status_tag_type[scope.row.status]" size="mini">{{ call_status_dict[scope.row.status] }}</el-tag>
+                </template>
+            </el-table-column>
+            <el-table-column prop="rec_status" label="推荐状态" width="90">
+                <template slot-scope="scope">
+                    <el-tag :type="call_rec_status_tag_type[scope.row.rec_status]" size="mini">{{ call_rec_status_dict[scope.row.rec_status] }}</el-tag>
+                </template>
+            </el-table-column>
+            <el-table-column prop="operator" label="操作员" width="90"></el-table-column>
+            <el-table-column prop="created_at" label="创建时间" width="90">
+                <template slot-scope="scope">
+                    <el-tooltip :content="scope.row.created_at.split(' ')[1]" placement="right">
+                        <el-button size="mini" type="text">{{ scope.row.created_at.split(' ')[0] }}</el-button>
+                    </el-tooltip>
+                </template>
+            </el-table-column>
+        </el-table>
+        <span slot="footer">
+            <el-button @click="callShowVisible = false" size="mini">取消</el-button>
+            <el-button v-if="callShow.length" @click="handleCallExport" type="warning" size="mini" icon="el-icon-download">导出</el-button>
+        </span>
+    </el-dialog>
+
+    <!-- 总览 & 推荐更新 table -->
+    <el-dialog :title="callOverviewTitle" :visible.sync="callOverviewVisible" :close-on-click-modal="false" width="80%">
+        <el-table :data="callOverview" size="mini" border stripe>
+            <el-table-column prop="category" label="类型" width="72">
+                <template slot-scope="scope">
+                    <span v-if="scope.row.category === 'doctor'" ><i class="fa fa-user-circle text-danger"></i> 医生</span>
+                    <span v-else><i class="fa fa-user-circle text-primary"></i> 专家</span>
+                </template>
+            </el-table-column>
+            <el-table-column prop="name" label="姓名" width="140">
+                <template slot-scope="scope">
+                    <template v-if="scope.row.candidate_id">
+                        <el-tag size="mini" plain>已入库</el-tag>
+                        <el-link :href="`/${scope.row.category === 'doctor' ? 'doctors' : 'candidates'}/${scope.row.candidate_id}`" target="_blank">{{ scope.row.name }}</el-link>
+                    </template>
+                    <template v-else>{{ scope.row.name }}</template>
+                </template>
+            </el-table-column>
+            <el-table-column prop="company" label="公司/医院" width="140"></el-table-column>
+            <el-table-column prop="department" label="部门/科室" width="140"></el-table-column>
+            <el-table-column prop="title" label="职位" width="140"></el-table-column>
+            <el-table-column prop="memo" label="沟通记录">
+                <template slot-scope="scope">
+                    <div v-for="(m, index) in scope.row.memo_logs">{{ m[1] }}</div>
+                </template>
+            </el-table-column>
+            <el-table-column prop="phone" label="电话" width="140">
+                <template slot-scope="scope">
+                    <span v-if="scope.row.phone_visible">{{ scope.row.phone }}</span>
+                    <el-link v-else @click="show_phone(scope.row)" type="primary" class="cc-link">查看联系方式</el-link>
+                </template>
+            </el-table-column>
+            <el-table-column prop="rec_description" label="推荐描述" width="90">
+                <template slot-scope="scope">
+                    <el-button @click="handleRecDescription(scope.row.rec_description)" size="mini">查看</el-button>
+                </template>
+            </el-table-column>
+            <el-table-column prop="rec_status" label="推荐状态" width="120">
+                <template slot-scope="scope">
+                    <el-dropdown trigger="click">
+                        <span>
+                            <el-tag :type="call_rec_status_tag_type[scope.row.rec_status]" size="mini">{{ call_rec_status_dict[scope.row.rec_status] }}</el-tag>
+                            <i class="el-icon-arrow-down el-icon--right"></i>
+                        </span>
+                        <el-dropdown-menu slot="dropdown">
+                            <el-dropdown-item v-for="(val, index) in call_rec_status_op" :key="index">
+                                <el-tag @click="update_call_rec_status(val, scope.row)" :type="call_rec_status_tag_type[val]" size="mini">
+                                    {{ call_rec_status_dict[val] }}
+                                </el-tag>
+                            </el-dropdown-item>
+                        </el-dropdown-menu>
+                    </el-dropdown>
+                </template>
+            </el-table-column>
+            <el-table-column prop="operator" label="操作员" width="90"></el-table-column>
+            <el-table-column prop="created_at" label="创建时间" width="90">
+                <template slot-scope="scope">
+                    <el-tooltip :content="scope.row.created_at.split(' ')[1]" placement="right">
+                        <el-button size="mini" type="text">{{ scope.row.created_at.split(' ')[0] }}</el-button>
+                    </el-tooltip>
+                </template>
+            </el-table-column>
+        </el-table>
+        <span slot="footer">
+            <el-button size="mini" @click="callOverviewVisible = false">取消</el-button>
+        </span>
+    </el-dialog>
+
+    <el-dialog title="推荐描述" :visible.sync="recDescriptionVisible" :close-on-click-modal="false">
+        <div id="rec-description-content" class="rec-description-cc">{{ recDescription }}</div>
+        <span slot="footer">
+            <el-button @click="clipboard" type="primary" size="mini">复制</el-button>
+        </span>
+    </el-dialog>
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            projects: [],
+            rec_count: 0, // 推荐数量
+            search_form: {
+                page: 1,
+                per_page: 10,
+                total: 0,
+                _k: 'name',
+                _v: '',
+                is_rec: false,
+            },
+            reqForm: {
+                project_id: '',
+                project_name: '',
+                title: '',
+                content: '',
+                category: '',
+                demand_number: '',
+                operator_id: '',
+                fileList: []
+            },
+            reqFormRules: {
+                title: [
+                    { required: true, message: '标题不能为空'},
+                ],
+                content: [
+                    { required: true, message: '内容不能为空'},
+                ],
+                category: [
+                    { required: true, message: '需求类型不能为空'},
+                ],
+                demand_number: [
+                    { required: true, message: '需求人数不能为空'},
+                ],
+                operator_id: [
+                    { required: true, message: '请选择操作员'},
+                ],
+            },
+            reqFormVisible: false,
+            callShow: [], // 通话记录展示
+            callShowVisible: false,
+            callOverview: [], // 推荐约访总览
+            callOverviewTitle: '',
+            callOverviewVisible: false,
+            recDescription: '',
+            recDescriptionVisible: false,
+            user_options: [],  // 项目需求操作员
+            drawer: { title: '', content: '', files: [], visible: false },
+            status_dict: <%= Project::STATUS.to_json.html_safe %>,
+            req_categories: <%= ProjectRequirement::CATEGORIES.to_json.html_safe %>,
+            req_status_dict: <%= ProjectRequirement::STATUS.to_json.html_safe %>,
+            req_status_tag_type: { ongoing: 'success', finished: 'info', cancelled: 'info'},
+            call_status_dict: <%= CallRecord::STATUS.to_json.html_safe %>,
+            call_status_tag_type: { pending: 'info', missed: 'warning', rejected: 'warning', shutdown: 'warning', talking: 'warning',declined: 'danger', accepted: 'success' },
+            call_rec_status_op: ['init', 'recommended', 'hold', 'unsuited', 'ok'],
+            call_rec_status_dict: <%= CallRecord::REC_STATUS.to_json.html_safe %>,
+            call_rec_status_tag_type: { init: 'info', recommended: 'primary', hold: 'warning', unsuited: 'danger', ok: 'success', succ: 'success', fail: 'danger' },
+        },
+        mounted: function(){
+            this.$nextTick(function(){
+                console.log('v_pm_dashboard mounted')
+                this.load_projects()
+                setInterval(() => {
+                    this.load_projects()
+                }, 6000)
+            }) 
+        },
+        methods: {
+            load_projects () {
+                let _this_ = this;
+                let params = { 
+                    page: this.search_form.page,
+                    per_page: this.search_form.per_page,
+                    is_rec: this.search_form.is_rec
+                }
+                if (this.search_form._k && this.search_form._v) {
+                    params[this.search_form._k] = this.search_form._v
+                }
+                $.get('/projects/v_pm_dashboard_data', params, function (res) {
+                    _this_.projects = res.data.projects
+                    _this_.rec_count = res.data.rec_count
+                    _this_.search_form.total = res.data.total
+                })
+            },
+            sync_project_requirement (project_requirement, update_attrs=[]) {
+                // 项目需求更新后台数据后同步更新页面数据
+                this.projects.map(p => {
+                    if (update_attrs.length) {
+                        let cur_req = p.project_requirements.find(req => req.id == project_requirement.id)
+                        if (cur_req) update_attrs.map(attr => cur_req[attr] = project_requirement[attr] )
+                    } else {
+                        let index = p.project_requirements.findIndex(req => req.id === project_requirement.id)
+                        if (index !== -1) { p.project_requirements.splice(index, 1, project_requirement) }
+                    }
+                })
+            },
+            sync_call_record (call_record, update_attrs=[]) {
+                let _this_ = this
+                this.projects.map(p => {
+                    let req = p.project_requirements.find(req => req.id === call_record.project_requirement_id)
+                    if (req) {
+                        if (update_attrs.length) {
+                            let cur_call_record = req.call_records.find(c => c.id == call_record.id)
+                            update_attrs.map(attr => cur_call_record[attr] = call_record[attr])
+                        } else {
+                            let index = req.call_records.findIndex(c => c.id == call_record.id)
+                            if (index !== -1) { req.call_records.splice(index, 1, call_record) }
+                        }
+                    }
+                })
+                let co_index = this.callOverview.find(c => c.id === call_record.id)
+                if (co_index !== -1) { this.callOverview.splice(co_index, 1, call_record) }
+            },
+            update_req_priority (priority, req) {
+                let _this_ = this;
+                $.post('/project_requirements/v_update', { id: req.id, priority: priority }, function (res) {
+                    console.log('update priority res:', res)
+                })
+            },
+            update_req_status (status, req) {
+                let _this_ = this;
+                req.status = status;
+                $.post('/project_requirements/v_update', { id: req.id, status: status }, function (res) {
+                    // _this_.sync_project_requirement(res.data.project_requirement, ['status'])
+                })
+            },
+            update_call_rec_status (rec_status, call_record) {
+                let _this_ = this;
+                call_record.rec_status = rec_status
+                $.post('/call_records/v_update', { id: call_record.id, rec_status: rec_status }, function (res) {
+                    // _this_.sync_call_record(res.data.call_record, ['rec_status'])
+                })
+            },
+            get_user_options (project_id) {
+                let _this_ = this;
+                fetch(`/projects/${project_id}/user_options`).then(res => res.json()).then(data => {
+                    _this_.user_options = data
+                })
+            },
+            show_drawer (project_requirement) {
+                this.drawer = { title: project_requirement.title, content: project_requirement.content, files: project_requirement.files, visible: true }
+            },
+            handleSearch () {
+                this.search_form.page = 1
+                this.load_projects()
+            },
+            handleSearchRec () {
+                this.search_form.page = 1
+                this.search_form.is_rec = !this.search_form.is_rec
+                this.load_projects()
+            },
+            handleSearchReset () {
+                this.search_form.page = 1
+                this.search_form._k = 'name'
+                this.search_form._v = ''
+                this.search_form.is_rec = false
+                this.load_projects()
+            },
+            handlePageChange () {
+                this.load_projects()
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+            },
+            handleProjectNew () {
+                window.open('/projects/new', '_blank');
+            },
+            handleReqNew (project_id) {
+                this.reqFormVisible = true
+                if (this.reqForm.project_id !== project_id) {
+                    this.reqForm = { project_id: project_id, title: '', content: '',
+                                     category: '', demand_number: '', operator_id: '', fileList: [] }
+                    this.get_user_options(project_id)
+                }
+            },
+            handleReqEdit (project_requirement) {
+                this.reqFormVisible = true
+                let fileList = project_requirement.files.map(url => {
+                    return { name: url.split('/')[url.split('/').length - 1], url: url }
+                })
+                this.reqForm = { 
+                    id: project_requirement.id, title: project_requirement.title, content: project_requirement.content,
+                    category: project_requirement.category, demand_number: project_requirement.demand_number, 
+                    operator_id: project_requirement.operator_id, fileList: fileList
+                }
+                this.get_user_options(project_requirement.project_id)
+            },
+            handleReqSubmit () {
+                this.$refs.reqForm.validate().then(res => {
+                    let _this_ = this;
+                    let formData = new FormData();
+                    formData.append('title', this.reqForm.title)
+                    formData.append('content', this.reqForm.content)
+                    formData.append('category', this.reqForm.category)
+                    formData.append('demand_number', this.reqForm.demand_number)
+                    formData.append('operator_id', this.reqForm.operator_id)
+                    file_count = this.reqForm.fileList.length
+                    for(let i in this.reqForm.fileList) {
+                        if (this.reqForm.fileList[i].url) continue
+                        if (i == 0) {
+                            formData.append('file', this.reqForm.fileList[i].raw)
+                        } else {
+                            formData.append(`file${i}`, this.reqForm.fileList[i].raw)
+                        }
+                    }
+                    if (this.reqForm.id) {
+                        formData.append('id', this.reqForm.id)
+                        $.ajax({
+                            type: 'POST',
+                            url: '/project_requirements/v_update',
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            success: function(res) {
+                                if (res.status === 0){
+                                    _this_.sync_project_requirement(res.data.project_requirement)
+                                    _this_.reqFormVisible = false;
+                                    _this_.reqForm = {}
+                                    _this_.$message({ message: '提交成功', type: 'success' })
+                                }   else if (res.status === 1) {
+                                    _this_.$message({ message: res.msg, type: 'error' })
+                                }
+                            }
+                        })
+                    } else {
+                        formData.append('project_id', this.reqForm.project_id)
+                        $.ajax({
+                            type: 'POST',
+                            url: '/project_requirements/v_create',
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            success: function(res) {
+                                if (res.status === 0){
+                                    let project = _this_.projects.find(p => p.id === _this_.reqForm.project_id)
+                                    project.project_requirements.unshift(res.data.project_requirement)
+                                    _this_.reqFormVisible = false;
+                                    _this_.reqForm = {}
+                                    _this_.$message({ message: '提交成功', type: 'success' })
+                                }   else if (res.status === 1) {
+                                    _this_.$message({ message: res.msg, type: 'error' })
+                                }
+                            }
+                        })
+                    }
+                }).catch(err => {})
+            },
+            handleReqFileChange (file, fileList) {
+                this.reqForm.fileList = fileList
+            },
+            handleCallShow (call_records) {
+                this.callShow = call_records
+                this.callShowVisible = true
+            },
+            handleCallExport () {
+                let header = ['姓名', '公司/医院', '部门/科室', '职位', '反馈'];
+                let order = ['name', 'company', 'department', 'title', 'memo'];
+                let dataList = [];
+                this.callShow.forEach(item => {
+                  let dataUnit = order.map(key => item[key]);
+                  dataList.push(dataUnit);
+                })
+                let filename = '通话记录'
+                exportDataAsExcel(header, dataList, filename)
+            },
+            handleCallOverview (project_id, project_requirement_id) {
+                let call_records = []
+                let project = this.projects.find(p => p.id === project_id)
+                project.project_requirements.map(req => {
+                    if (!project_requirement_id || req.id === project_requirement_id) {
+                        req.call_records.map(c => {
+                            if (c.rec_status !== 'init') call_records.push(c)
+                        })
+                    }
+                })
+                this.callOverview = call_records
+                this.callOverviewTitle = project_requirement_id ? '更新状态' : '更新状态 - 推荐约访总览'
+                this.callOverviewVisible = true
+            },
+            handleRecDescription (rec_description) {
+                this.recDescription = rec_description
+                this.recDescriptionVisible = true
+            },
+            clipboard () {
+                clipboard('rec-description-content')
+            },
+            show_phone(call_record) {
+                Vue.set(call_record, 'phone_visible', true)
+            },
+        }
+    })
+</script>
+
+<style>
+    .top-bar-cc>.el-card__body {
+        display: flex;
+        justify-content: space-between;
+    }
+    .header-cc {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .el-card__header { padding: 9px 12px; }
+    .el-card__body { padding: 6px; }
+    .drawer-content {
+        padding: 0 20px;
+        font-size: 0.9rem;
+        white-space: pre-line;
+        margin-bottom: 1rem;
+    }
+    .drawer-files {
+        padding: 0 20px;
+        font-size: 0.8rem;
+    }
+    .rec-description-cc {
+        white-space: pre-line;
+    }
+    .cc-link {
+        font-size: 12px;
+    }
+</style>

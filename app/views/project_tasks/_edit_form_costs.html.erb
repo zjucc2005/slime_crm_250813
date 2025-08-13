@@ -1,0 +1,49 @@
+<table class="table table-sm table-striped border nowrap card-text">
+    <thead>
+    <tr>
+        <th><%= mt(:project_task_cost, :category) %></th>
+        <th><%= mt(:project_task_cost, :price) %></th>
+        <th><%= mt(:project_task_cost, :payment_way) %></th>
+        <th><%= mt(:candidate_payment_info, :bank) %></th>
+        <th><%= mt(:candidate_payment_info, :sub_branch) %></th>
+        <th><%= mt(:candidate_payment_info, :account) %></th>
+        <th><%= mt(:candidate_payment_info, :username) %></th>
+        <th><%= mt(:candidate_payment_info, :id_number) %></th>
+        <th><%= mt(:project_task_cost, :memo) %></th>
+        <th><%= mt(:project_task_cost, :lijin) %></th>
+        <th class="action"><%= t(:operation) %></th>
+    </tr>
+    </thead>
+    <tbody>
+    <% project_task.costs.each do |cost| %>
+    <tr>
+        <td><%= ProjectTaskCost::CATEGORY[cost.category] %></td>
+        <td><%= "#{cost.price} #{cost.currency}" %></td>
+        <td><%= candidate_payment_info_category_badge(cost.payment_info['category']) %></td>
+        <td><%= cost.payment_info['bank'] %></td>
+        <td><%= cost.payment_info['sub_branch'] %></td>
+        <td><%= cost.payment_info['account'] %></td>
+        <td><%= cost.payment_info['username'] %></td>
+        <td><%= cost.payment_info['id_number'] %></td>
+        <td><%= cost.memo %></td>
+        <td><%= cost.lijin %></td>
+        <td class="action">
+            <%= link_to edit_cost_project_task_path(project_task, project_task_cost_id: cost.id), class: 'btn btn-edit btn-xs' do %>
+                <i class="fa fa-edit"></i> 编辑价格
+            <% end if cost.category.exclude?('expert_tax') %>
+            <%= link_to remove_cost_project_task_path(project_task, project_task_cost_id: cost.id), :method => :delete, :remote => true,
+                        :data => { :confirm => t(:sure_to_remove) }, :class => 'btn btn-danger btn-xs' do %>
+                <%= fa_icon_tag('trash') %> <%= t('action.remove') %>
+            <% end if cost.category.exclude?('expert_tax') %>
+        </td>
+    </tr>
+    <% end %>
+    <tr>
+        <td colspan="11" align="center">
+            <%= button_tag :type => 'button', :class => 'btn btn-primary btn-xs', :data => { :toggle => 'modal', :target => '#addCostModal'} do %>
+                <%= fa_icon_tag('plus') %> <%= t('action.add_model', :model => t(:payment_info)) %>
+            <% end %>
+        </td>
+    </tr>
+    </tbody>
+</table>

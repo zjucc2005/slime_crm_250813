@@ -1,0 +1,332 @@
+<%
+# Logging information to debug rendering issues
+begin
+  Rails.logger.info "==== Rendering _medical_insurance_fields.html.erb ===="
+  Rails.logger.info "Field object: #{f.object.inspect}"
+  
+  # Check the constants
+  Rails.logger.info "MedicalInsuranceInfo::NON_CLINICAL_TYPES defined: #{defined?(MedicalInsuranceInfo::NON_CLINICAL_TYPES) != nil}"
+  if defined?(MedicalInsuranceInfo::NON_CLINICAL_TYPES)
+    Rails.logger.info "Value: #{MedicalInsuranceInfo::NON_CLINICAL_TYPES.inspect}"
+  end
+  
+  Rails.logger.info "MedicalInsuranceInfo::COMPREHENSIVE_SUB_TYPES defined: #{defined?(MedicalInsuranceInfo::COMPREHENSIVE_SUB_TYPES) != nil}"
+  if defined?(MedicalInsuranceInfo::COMPREHENSIVE_SUB_TYPES)
+    Rails.logger.info "Value: #{MedicalInsuranceInfo::COMPREHENSIVE_SUB_TYPES.inspect}"
+  end
+  
+  Rails.logger.info "MedicalInsuranceInfo::CALCULATION_SUB_TYPES defined: #{defined?(MedicalInsuranceInfo::CALCULATION_SUB_TYPES) != nil}"
+  if defined?(MedicalInsuranceInfo::CALCULATION_SUB_TYPES)
+    Rails.logger.info "Value: #{MedicalInsuranceInfo::CALCULATION_SUB_TYPES.inspect}"
+  end
+rescue => e
+  Rails.logger.error "Error in _medical_insurance_fields template: #{e.message}"
+  Rails.logger.error e.backtrace.join("\n")
+end
+%>
+<div class="nested-fields row border p-2 mb-2">
+  <div class="col-lg-2 col-6 form-group">
+    <%= f.label :year, '年份' %><span class="text-red">*</span>
+    <%= f.number_field :year, min: 2000, max: Time.now.year, required: true, class: 'form-control' %>
+  </div>
+  
+  <div class="col-lg-3 col-6 form-group">
+    <%= f.label :is_clinical, '是否临床' %><span class="text-red">*</span>
+    <%= f.select :is_clinical, boolean_options, { include_blank: false }, 
+                class: 'form-control select2-boolean-with-icon', 
+                onchange: 'toggleClinicalFields(this)' %>
+  </div>
+  
+  <div class="col-lg-3 col-6 form-group non-clinical-fields" style="display: none;">
+    <%= f.label :non_clinical_type, '分类' %><span class="text-red">*</span>
+    <% non_clinical_types = defined?(MedicalInsuranceInfo::NON_CLINICAL_TYPES) ? 
+                          MedicalInsuranceInfo::NON_CLINICAL_TYPES.to_a.map(&:reverse) : [] %>
+    <%= f.select :non_clinical_type, 
+                non_clinical_types, 
+                { include_blank: default_prompt }, 
+                class: 'form-control select2', 
+                onchange: 'toggleSubTypeFields(this)' %>
+  </div>
+  
+  <div class="col-lg-3 col-6 form-group comprehensive-fields" style="display: none;">
+    <%= f.label :sub_type, '综合组分类' %><span class="text-red">*</span>
+    <% comprehensive_sub_types = defined?(MedicalInsuranceInfo::COMPREHENSIVE_SUB_TYPES) ? 
+                               MedicalInsuranceInfo::COMPREHENSIVE_SUB_TYPES.to_a.map(&:reverse) : [] %>
+    <%= f.select :sub_type, 
+                comprehensive_sub_types, 
+                { include_blank: default_prompt }, 
+                class: 'form-control select2 comprehensive-subtype-select',
+                data: { type: 'comprehensive' },
+                id: "#{f.object_name}_comprehensive_sub_type" %>
+  </div>
+  
+  <div class="col-lg-3 col-6 form-group calculation-fields" style="display: none;">
+    <%= f.label :sub_type, '测算组分类' %><span class="text-red">*</span>
+    <% calculation_sub_types = defined?(MedicalInsuranceInfo::CALCULATION_SUB_TYPES) ? 
+                            MedicalInsuranceInfo::CALCULATION_SUB_TYPES.to_a.map(&:reverse) : [] %>
+    <%= f.select :sub_type, 
+                calculation_sub_types, 
+                { include_blank: default_prompt }, 
+                class: 'form-control select2 calculation-subtype-select',
+                data: { type: 'calculation' },
+                id: "#{f.object_name}_calculation_sub_type" %>
+  </div>
+  
+  <div class="col-lg-1 col-6 form-group d-flex align-items-end">
+    <%= link_to_remove_association '删除', f, class: 'btn btn-sm btn-outline-danger' %>
+  </div>
+</div>
+
+<script>
+  function toggleClinicalFields(select) {
+    var row = $(select).closest('.nested-fields');
+    var nonClinicalFields = row.find('.non-clinical-fields');
+    var comprehensiveFields = row.find('.comprehensive-fields');
+    var calculationFields = row.find('.calculation-fields');
+    var nonClinicalTypeSelect = row.find('select[name*="[non_clinical_type]"]');
+    var comprehensiveSelect = row.find('.comprehensive-subtype-select');
+    var calculationSelect = row.find('.calculation-subtype-select');
+    
+    // 保存当前值
+    var nonClinicalType = nonClinicalTypeSelect.val();
+    var comprehensiveValue = comprehensiveSelect.val();
+    var calculationValue = calculationSelect.val();
+    
+    if ($(select).val() === 'true') {
+      nonClinicalFields.hide();
+      comprehensiveFields.hide();
+      calculationFields.hide();
+      nonClinicalTypeSelect.prop('disabled', true);
+      comprehensiveSelect.prop('disabled', true);
+      calculationSelect.prop('disabled', true);
+    } else {
+      nonClinicalFields.show();
+      nonClinicalTypeSelect.prop('disabled', false);
+      
+      // 恢复之前的值
+      if (nonClinicalType) {
+        nonClinicalTypeSelect.val(nonClinicalType);
+        if (nonClinicalType === 'comprehensive' && comprehensiveValue) {
+          comprehensiveSelect.val(comprehensiveValue);
+        } else if (nonClinicalType === 'calculation' && calculationValue) {
+          calculationSelect.val(calculationValue);
+        }
+      }
+      
+      // 根据非临床类型显示相应的子类型字段
+      toggleSubTypeFields(nonClinicalTypeSelect[0]);
+    }
+    
+    try {
+      safeRefreshSelect2(row.find('.select2'));
+    } catch (e) {
+      console.error('刷新select2时出错:', e);
+    }
+  }
+  
+  function toggleSubTypeFields(select) {
+    var row = $(select).closest('.nested-fields');
+    var comprehensiveFields = row.find('.comprehensive-fields');
+    var calculationFields = row.find('.calculation-fields');
+    var comprehensiveSelect = row.find('.comprehensive-subtype-select');
+    var calculationSelect = row.find('.calculation-subtype-select');
+    
+    // 保存当前值
+    var comprehensiveValue = comprehensiveSelect.val();
+    var calculationValue = calculationSelect.val();
+    var nonClinicalType = $(select).val();
+    
+    if (nonClinicalType === 'comprehensive') {
+      comprehensiveFields.show();
+      calculationFields.hide();
+      comprehensiveSelect.prop('disabled', false);
+      calculationSelect.prop('disabled', true);
+      
+      // 恢复综合组的值
+      if (comprehensiveValue) {
+        comprehensiveSelect.val(comprehensiveValue);
+      }
+    } else if (nonClinicalType === 'calculation') {
+      calculationFields.show();
+      comprehensiveFields.hide();
+      calculationSelect.prop('disabled', false);
+      comprehensiveSelect.prop('disabled', true);
+      
+      // 恢复测算组的值
+      if (calculationValue) {
+        calculationSelect.val(calculationValue);
+      }
+    } else {
+      comprehensiveFields.hide();
+      calculationFields.hide();
+      comprehensiveSelect.prop('disabled', true);
+      calculationSelect.prop('disabled', true);
+    }
+    
+    try {
+      safeRefreshSelect2(row.find('.select2'));
+    } catch (e) {
+      console.error('刷新select2时出错:', e);
+    }
+  }
+  
+  // 安全地刷新select2控件，避免无限递归
+  function safeRefreshSelect2(select) {
+    if (select && select.length) {
+      // 使用setTimeout来避免调用栈问题
+      setTimeout(function() {
+        try {
+          select.trigger('change.select2');
+        } catch (e) {
+          console.error('刷新select2时出错:', e);
+        }
+      }, 0);
+    }
+  }
+  
+  // 初始化函数，保留现有数据
+  function initializeMedicalInsuranceFields(row) {
+    try {
+      console.log('开始初始化医保字段...');
+      var isClinicalSelect = row.find('select[name*="[is_clinical]"]');
+      var nonClinicalTypeSelect = row.find('select[name*="[non_clinical_type]"]');
+      var comprehensiveSelect = row.find('.comprehensive-subtype-select');
+      var calculationSelect = row.find('.calculation-subtype-select');
+      
+      var comprehensiveFields = row.find('.comprehensive-fields');
+      var calculationFields = row.find('.calculation-fields');
+      var nonClinicalFields = row.find('.non-clinical-fields');
+      
+      // 获取并记录当前的值
+      var isClinical = isClinicalSelect.val();
+      var nonClinicalType = nonClinicalTypeSelect.val();
+      var comprehensiveValue = comprehensiveSelect.val();
+      var calculationValue = calculationSelect.val();
+      
+      console.log('当前值:', {
+        isClinical: isClinical,
+        nonClinicalType: nonClinicalType,
+        comprehensiveValue: comprehensiveValue,
+        calculationValue: calculationValue
+      });
+      
+      // 初始化select2
+      row.find('select').each(function() {
+        if (!$(this).data('select2')) {
+          $(this).select2({
+            theme: 'bootstrap4',
+            width: '100%'
+          });
+        }
+      });
+      
+      // 根据是否临床设置字段状态
+      if (isClinical === 'true') {
+        console.log('初始化临床类型字段...');
+        nonClinicalFields.hide();
+        comprehensiveFields.hide();
+        calculationFields.hide();
+        nonClinicalTypeSelect.prop('disabled', true);
+        comprehensiveSelect.prop('disabled', true);
+        calculationSelect.prop('disabled', true);
+      } else {
+        console.log('初始化非临床类型字段...');
+        nonClinicalFields.show();
+        nonClinicalTypeSelect.prop('disabled', false);
+        
+        // 根据非临床类型显示相应的子类型字段
+        if (nonClinicalType === 'comprehensive') {
+          console.log('显示综合组字段...');
+          comprehensiveFields.show();
+          calculationFields.hide();
+          comprehensiveSelect.prop('disabled', false);
+          calculationSelect.prop('disabled', true);
+          if (comprehensiveValue) {
+            comprehensiveSelect.val(comprehensiveValue).trigger('change.select2');
+          }
+        } else if (nonClinicalType === 'calculation') {
+          console.log('显示测算组字段...');
+          calculationFields.show();
+          comprehensiveFields.hide();
+          calculationSelect.prop('disabled', false);
+          comprehensiveSelect.prop('disabled', true);
+          if (calculationValue) {
+            calculationSelect.val(calculationValue).trigger('change.select2');
+          }
+        } else {
+          console.log('隐藏所有子类型字段...');
+          comprehensiveFields.hide();
+          calculationFields.hide();
+          comprehensiveSelect.prop('disabled', true);
+          calculationSelect.prop('disabled', true);
+        }
+      }
+      
+      // 刷新所有select2
+      row.find('select').each(function() {
+        if ($(this).data('select2')) {
+          $(this).trigger('change.select2');
+        }
+      });
+      
+      console.log('医保字段初始化完成');
+    } catch (e) {
+      console.error('初始化医保字段时出错:', e);
+    }
+  }
+  
+  // 初始化所有医保字段行
+  try {
+    $('.nested-fields').each(function() {
+      initializeMedicalInsuranceFields($(this));
+    });
+  } catch (e) {
+    console.error('初始化医保字段时出错:', e);
+  }
+  
+  // 监听新增行的事件
+   $(document).on('cocoon:after-insert', function(e, insertedItem) {
+     try {
+       if (insertedItem.find('.nested-fields').length > 0 || insertedItem.hasClass('nested-fields')) {
+         var row = insertedItem.hasClass('nested-fields') ? insertedItem : insertedItem.find('.nested-fields');
+         initializeMedicalInsuranceFields(row);
+       }
+     } catch (error) {
+       console.error('新增医保字段初始化时出错:', error);
+     }
+   });
+  
+  // 页面加载时初始化所有已存在的医保字段
+  $(document).ready(function() {
+    try {
+      $('.nested-fields').each(function() {
+        initializeMedicalInsuranceFields($(this));
+      });
+    } catch (error) {
+      console.error('初始化已存在的医保字段时出错:', error);
+    }
+  });
+
+  // 表单提交前确保禁用的字段不会提交值
+  $(document).on('submit', 'form', function() {
+    try {
+      console.log('表单提交前的医保信息字段检查:');
+      $('.nested-fields').each(function(index) {
+        var isClinical = $(this).find('select[name*="[is_clinical]"]').val();
+        var nonClinicalType = $(this).find('select[name*="[non_clinical_type]"]').val();
+        var comprehensiveSelect = $(this).find('.comprehensive-subtype-select');
+        var calculationSelect = $(this).find('.calculation-subtype-select');
+        
+        console.log('医保记录 ' + (index + 1) + ':');
+        console.log('  是否临床:', isClinical);
+        console.log('  非临床类型:', nonClinicalType);
+        console.log('  综合组值:', comprehensiveSelect.val(), '禁用状态:', comprehensiveSelect.prop('disabled'));
+        console.log('  测算组值:', calculationSelect.val(), '禁用状态:', calculationSelect.prop('disabled'));
+      });
+    } catch (e) {
+      console.error('表单提交检查时出错:', e);
+    }
+    
+    return true;
+  });
+</script>

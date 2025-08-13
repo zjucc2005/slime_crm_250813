@@ -1,0 +1,64 @@
+<div class="card card-inner mb-3">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('phone') %> <%= t(:client_contact) %></h5>
+        <%= link_to add_clients_project_path(@project), :class => 'btn btn-primary btn-xs' do %>
+            <%= fa_icon_tag('plus') %> <%= t('action.add', :model => nil) %>
+        <% end if can?(:add_clients, Project) && @can_operate && @project.can_edit? %>
+    </div>
+
+    <div class="card-body">
+        <% if project_clients.any? %>
+            <table class="table table-sm table-striped table-hover card-text">
+                <thead>
+                <tr>
+                    <th><%= mt(:candidate, :id) %></th>
+                    <th><%= mt(:candidate, :name) %></th>
+                    <th><%= mt(:project_candidate, :mark) %> <i class="fa fa-caret-down"></i></th>
+                    <th><%= mt(:candidate, :title) %></th>
+                    <th><%= mt(:client, :phone) %></th>
+                    <th><%= mt(:client, :email) %></th>
+                    <th class="action"><%= t(:operation) %></th>
+                </tr>
+                </thead>
+                <tbody>
+                <% project_clients.each do |item| %>
+                    <% client = item.candidate %>
+                    <tr>
+                        <td><%= link_to "# #{client.uid}", edit_client_path(client, return_to: request.path), :class => 'text-gray' %></td>
+                        <td><%= link_to client.name, edit_client_path(client, return_to: request.path) %></td>
+                        <td>
+                            <div class="dropdown">
+                                <a href="#" role="button" id="pcm_<%= item.id %>" data-toggle="dropdown">
+                                    <%= project_candidate_mark_badge(item.mark) %>
+                                </a>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-header"><%= mt(:project_candidate, :mark) %></div>
+                                    <% %w[main normal].each do |mark| %>
+                                        <%= link_to update_mark_project_candidate_path(item, mark: mark), method: :put, remote: true, class: 'dropdown-item' do %>
+                                            <%= project_candidate_mark_badge(mark) %>
+                                        <% end %>
+                                    <% end %>
+                                </div>
+                            </div>
+                        </td>
+                        <td><%= client.title %></td>
+                        <td><%= client.phone %><br><%= client.phone1 %></td>
+                        <td><%= client.email %><br><%= client.email1 %></td>
+                        <td class="action">
+                            <%= link_to delete_client_project_path(@project, client_id: client.id),
+                                        :method => :delete, :data => { :confirm => t(:sure_to_remove) },
+                                        :class => 'btn btn-danger btn-xs' do %>
+                                <%= fa_icon_tag('trash') %> <%= t('action.remove') %>
+                            <% end if can?(:delete_client, Project) && @can_operate && @project.can_edit? %>
+                        </td>
+                    </tr>
+                <% end %>
+                </tbody>
+            </table>
+        <% else %>
+            <div class="p-2 text-center">
+                <h5 class="text-gray mb-0"><%= t(:not_found) %></h5>
+            </div>
+        <% end %>
+    </div>
+</div>

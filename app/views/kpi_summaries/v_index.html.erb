@@ -1,0 +1,99 @@
+<%= render partial: 'kpi_summaries/widgets/nav', locals: { active: 1 } %>
+
+<div class="card p-2 mb-2">
+    <div class="d-flex flex-row justify-content-between mb-2 pb-2 border-bottom">
+        <%= link_to v_summary_edit_kpi_summaries_path, class: 'btn btn-sm btn-primary' do %>
+            <%= t('action.new_model', model: mt(:kpi_summary)) %> <i class="fa fa-arrow-right"></i>
+        <% end %>
+    </div>
+
+    <div id="app">
+        <el-row :gutter="10" class="mb-2">
+            <el-col :lg="6" :md="12">
+                <label class="text-smaller">统计月份</label>
+                <el-date-picker
+                    v-model="search_form.datetime"
+                    @change="load_kpi_summaries"
+                    type="month"
+                    size="small"
+                    value-format="yyyy-MM-dd"
+                    placeholder="选择月份"
+                    style="width: 100%;"
+                />
+            </el-col>
+            <el-col :lg="6" :md="12">
+                <el-button @click="load_kpi_summaries" size="small" plain style="margin-top: 1.9rem;">
+                    <i class="el-icon-refresh-right"></i> 刷新
+                </el-button>
+            </el-col>
+        </el-row>
+
+        <el-row :gutter="10">
+            <el-col v-for="(s, index) in kpi_summaries" :key="s.id" :lg="6" :md="12" class="mb-2">
+                <el-card shadow="hover" :body-style="{ padding: '6px 10px' }">
+                <el-tree
+                    :data="[s]"
+                    node-key="id"
+                    :props="{ label: 'name', children: 'infos' }"
+                    default-expand-all
+                    :expand-on-click-node="false">
+                    <span class="c-tree-node" slot-scope="{ node, data }">
+                        <span :class="data.user_id ? 'text-bold' : ''">{{ data.name }}</span>
+                        <span v-if="data.user_id">
+                            <el-link :href="`/kpi_summaries/v_summary_edit?kpi_summary_id=${data.id}`" type="primary">
+                                <i class="el-icon-edit-outline"></i>
+                            </el-link>
+                        </span>
+                        <span v-else>
+                            <el-tag v-if="data.remark" size="small">{{ data.remark }}</el-tag>
+                            <span>{{ data.price }}</span>
+                        </span>
+                    </span>
+                </el-tree>
+                </el-card>
+            </el-col>
+        </el-row>
+    </div>
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            search_form: {
+                datetime: '<%= params[:datetime] || (Time.now.beginning_of_month - 1.month).strftime('%F') %>'
+            },
+            kpi_summaries: []
+        },
+        mounted: function(){
+            this.$nextTick(function(){
+                console.log('mounted')
+                this.load_kpi_summaries()
+            })
+        },
+        methods: {
+            load_kpi_summaries () {
+                let _this_ = this;
+                console.log('load kpi summaries req:', this.search_form.datetime)
+                $.get('/kpi_summaries/v_index', this.search_form, function (res) {
+                    _this_.kpi_summaries = res.data.kpi_summaries
+                    console.log('load kpi summaries res:', res)
+                })
+            }
+        }
+    })
+</script>
+
+<style>
+  .c-tree-node {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    padding-right: 8px;
+  }
+  .el-tree-node__content {
+    height: 30px;
+  }
+</style>

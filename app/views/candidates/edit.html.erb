@@ -1,0 +1,18 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('user-circle') %> <%= t('action.edit_model', :model => mt(:expert)) %></h5>
+        <%= link_to fa_icon_tag('close'), 'javascript:history.go(-1);', :class => 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <%= form_for @candidate, :html => { :multipart => true } do |f| %>
+            <%= render :partial => 'form', :locals => { :f => f } %>
+            <%= render :partial => 'form_work_exp' %>
+
+            <div class="form-group mb-0">
+                <%= f.submit t('action.save'), :class => 'btn btn-submit' %>
+                <%= link_to t('action.back'), 'javascript:history.go(-1);', :class => 'btn btn-back' %>
+            </div>
+        <% end %>
+    </div>
+</div>

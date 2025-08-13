@@ -1,0 +1,136 @@
+<div class="card p-2 d-flex flex-row mb-1 justify-content-between">
+    <div>
+        <%= link_to new_doctor_path, :class => 'btn btn-primary' do %>
+            <%= fa_icon_tag('plus') %> <%= "#{t('action.new_model', :model => mt(:doctor))}" %>
+        <% end if can?(:new, Candidate) %>
+        <%#= render :partial => 'doctors/widgets/btn_import_haodf' %>
+        <%= render :partial => 'candidates/widgets/expert_card', :locals => { :uid => nil } %>
+        <%= render :partial => 'candidates/widgets/add_to_project_modal', :locals => { :uid => nil} %>
+    </div>
+    <div>
+        <%= render :partial => 'shared/per_page_select' %>
+        <%#= render :partial => 'doctors/widgets/search_modal' %>
+    </div>
+</div>
+
+<div class="card p-2 mb-1">
+    <%= form_tag request.path, method: :get do %>
+        <%= hidden_field_tag :per_page, params[:per_page] %>
+        <%= hidden_field_tag :from_source, params[:from_source] %>
+        <%= hidden_field_tag :project_id, params[:project_id] %>
+        <div class="row">
+            <div class="col-lg-2 col-6 form-group">
+                <%= label_tag :logical_operator, '逻辑运算符(专家说明)' %>
+                <%= select_tag :logical_operator, options_for_select(['AND', 'OR'], params[:logical_operator]), class: 'form-control select2' %>
+            </div>
+            <div class="col-lg-8 col-6 form-group">
+                <%= label_tag :description, t(:expert_description) %>
+                <%= text_field_tag :description, params[:description], class: 'form-control', placeholder: '关键词之间用空格隔开, 最多5个关键词' %>
+            </div>
+            <div class="col-lg-2 col-6 form-group">
+                <%= label_tag :is_available, mt(:candidate, :is_available) %>
+                <%= select_tag :is_available, options_for_select(candidate_is_available_search_options, params[:is_available]), prompt: default_prompt, class: 'form-control select2-boolean-with-icon' %>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-2 col-6 form-group">
+                <%= label_tag :id, mt(:candidate, :id) %>
+                <%= text_field_tag :id, params[:id], class: 'form-control' %>
+            </div>
+            <div class="col-lg-2 col-6 form-group">
+                <%= label_tag :name, mt(:candidate, :name) %>
+                <%= text_field_tag :name, params[:name], class: 'form-control' %>
+            </div>
+            <div class="col-lg-2 col-6 form-group">
+                <%= label_tag :phone, mt(:candidate, :phone) %>
+                <%= text_field_tag :phone, params[:phone], class: 'form-control' %>
+            </div>
+            <div class="col-lg-2 col-6 form-group">
+                <%= label_tag :email, mt(:candidate, :email) %>
+                <%= text_field_tag :email, params[:email], class: 'form-control' %>
+            </div>
+            <div class="col-lg-4 col-12 form-group">
+                <%= label_tag :name, mt(:candidate, :name) %>(Multiple, 空格隔开)
+                <%= text_field_tag :name_or, params[:name_or], class: 'form-control' %>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-2 col-6 form-group">
+                <%= label_tag :city_level, t(:city_level) %>
+                <%= select_tag :city_level, options_for_select(['一线', '新一线'], params[:city_level]), prompt: default_prompt, class: 'form-control select2' %>
+            </div>
+            <div class="col-lg-2 col-6 form-group">
+                <%= label_tag :province, mt(:hospital, :province) %>
+                <%= select_tag :ld_province_id, options_for_select(@current_province_options || [], params[:ld_province_id]),
+                               onchange: "loadChildrenForProvince(this.value, #{params[:ld_city_id]})",
+                               prompt: default_prompt, class: 'form-control select2-province-options' %>
+            </div>
+            <div class="col-lg-2 col-6 form-group">
+                <%= label_tag :city, mt(:hospital, :city) %>
+                <%= select_tag :ld_city_id, options_for_select(ld_city_options(params[:ld_province_id]), params[:ld_city_id]), prompt: default_prompt, class: 'form-control select2' %>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-2 col-6 form-group">
+                <%= label_tag :hospital_level, mt(:hospital, :level) %>
+                <%= select_tag :hospital_level, options_for_select(hospital_level_options, params[:hospital_level]), prompt: default_prompt, class: 'form-control select2' %>
+            </div>
+            <div class="col-lg-2 col-6 form-group">
+                <%= label_tag :hospital, mt(:candidate_experience, :hospital) %>
+                <%= select_tag :hospital_id, options_for_select(@current_hospital_options || [], params[:hospital_id]),
+                               onchange: "loadChildrenForHospital(this.value, #{params[:hospital_department_id]})",
+                               prompt: default_prompt, class: 'form-control select2-hospital-options' %>
+            </div>
+            <div class="col-lg-2 col-6 form-group">
+                <%= label_tag :department, mt(:candidate_experience, :department) %>
+                <%= select_tag :hospital_department_id, options_for_select(hospital_department_options(params[:hospital_id]), params[:hospital_department_id]), prompt: default_prompt, class: 'form-control select2' %>
+            </div>
+            <div class="col-lg-2 col-6 form-group">
+                <%= label_tag :title, mt(:candidate_experience, :title) %>
+                <%= text_field_tag :title, params[:title], class: 'form-control' %>
+            </div>
+            <div class="col-lg-2 col-6 form-group">
+                <%= label_tag :category2, mt(:candidate, :category) %>
+                <%= select_tag :category2, options_for_select(Doctor::CATEGORY.to_a.map(&:reverse), params[:category2]), prompt: default_prompt, class: 'form-control select2' %>
+            </div>
+            <div class="col-lg-2 col-6 form-group">
+                <%= label_tag :yibaotanpan_year, mt(:candidate, :yibaotanpan_year) %>
+                <%= select_tag :yibaotanpan_year, options_for_select(yibaotanpan_year_options, params[:yibaotanpan_year]), prompt: default_prompt, class: 'form-control select2' %>
+            </div>
+        </div>
+        <%= button_tag type: 'submit', class: 'btn btn-submit' do %>
+            <i class="fa fa-search"></i> <%= t('action.search') %>
+        <% end %>
+    <% end %>
+</div>
+
+<%= render :partial => 'shared/loading_modal' %>
+
+<% if @doctors.present? %>
+    <%= render :partial => 'list_unit' %>
+<% else %>
+    <div class="card p-2">
+        <div class="p-4 text-center">
+            <h5 class="text-gray mb-0"><%= t(:not_found) %></h5>
+        </div>
+    </div>
+<% end %>
+
+<div class="float-bar">
+    <%= button_tag('', :type => 'button', :class => 'float-bar-btn fa fa-map', :title => t(:add_to_project), :data => { :toggle => 'modal', :target => '#addToProjectModal'}) if can?(:add_experts, Project) %>
+    <%= button_tag '', :type => 'button', :class => 'float-bar-btn fa fa-angle-up', :onclick => 'window.scrollTo(0, 0);' %>
+</div>
+
+<script>
+    // 返回锚点
+    $(function() {
+        var _id_ = window.location.hash;
+        if(_id_.startsWith('#')){
+            var m = $(_id_);
+            if(m.offset()){
+                y = m.offset().top - 60;
+                $("html,body").animate({ scrollTop: y }, 500);
+            }
+        }
+    });
+</script>

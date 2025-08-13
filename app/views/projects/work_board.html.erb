@@ -1,0 +1,85 @@
+<%= render partial: 'utils/loading_modal' %>
+<div class="card p-2 mb-1">
+    <%= form_tag request.path, method: :get do %>
+        <div class="row">
+            <div class="col-lg-2 col-6 form-group mb-lg-0">
+                <%= label_tag :name, mt(:project, :name) %>
+                <%= text_field_tag :name, params[:name], class: 'form-control' %>
+            </div>
+            <div class="col-lg-2 col-6 form-group mb-lg-0">
+                <%= label_tag :code, mt(:project, :code) %>
+                <%= text_field_tag :code, params[:code], class: 'form-control' %>
+            </div>
+            <div class="col-lg-2 col-6 form-group mb-lg-0">
+                <%= label_tag :status, mt(:project, :status) %>
+                <%= select_tag :status, options_for_select(Project::STATUS.to_a.map(&:reverse), params[:status]),
+                               :prompt => default_prompt, class: 'form-control select2' %>
+            </div>
+            <div class="col-lg-2 col-6 form-group mb-lg-0">
+                <%= label_tag :company, mt(:company) %>
+                <%= text_field_tag :company, params[:company], class: 'form-control', :placeholder => '公司名称/简称' %>
+            </div>
+            <div class="col-lg-2 col-6 form-group mb-lg-0">
+                <%= label_tag :client_name, t(:client_contact) %>
+                <%= text_field_tag :client_name, params[:client_name], class: 'form-control' %>
+            </div>
+            <div class="col-lg-2 col-6">
+                <%= label_tag :space, '&nbsp;'.html_safe %><br>
+                <%= button_tag type: 'submit', class: 'btn btn-sm btn-submit w-100' do %>
+                    <i class="fa fa-search"></i> <%= t('action.search') %>
+                <% end %>
+            </div>
+        </div>
+
+    <% end %>
+</div>
+<% if @projects.present? %>
+    <div class="row mb-2" id="workboard">
+        <div class="col-2 pr-0">
+            <ul class="nav nav-tabs-column flex-column mb-2">
+                <% @projects.each_with_index do |project, index| %>
+                    <li class="nav-item">
+                        <a class="nav-link <%= index.zero? ? 'active' : '' %>" data-toggle="tab" href="#project_<%= project.id %>" onclick="loadProjectCallRecords(<%= project.id %>);">
+                            <div class="text-smaller" title="<%= project.name %>"><%= truncate("#{project.code} #{project.name}", length: 19) %></div>
+                            <div class="text-gray text-smaller d-flex justify-content-between">
+                                <span><%= project.company.name_abbr %></span>
+                                <span title="<%= project.created_at.strftime('%F %T') %>"><%= project.created_at.strftime('%F') %></span>
+                            </div>
+                        </a>
+                    </li>
+                <% end %>
+            </ul>
+            <%= will_paginate @projects, inner_window: 0, outer_window: 0, previous_label: '<', next_label: '>' %>
+        </div>
+        <div class="col-10 pl-0">
+            <!-- Tab panes -->
+            <div class="tab-content">
+                <% @projects.each_with_index do |project, index| %>
+                    <div id="project_<%= project.id %>" class="container-fluid bg-white tab-pane <%= index.zero? ? 'active' : '' %>">
+                        <div class="tab-header">
+                            <h3 class="mb-0">
+                                <span class="text-smaller text-gray"><%= "# #{project.uid}" %> <%= project_status_badge(project.status) %></span>
+                                <%= "#{project.code} #{project.name}" %>
+                            </h3>
+                            <%= link_to 'javascript:void(0);', onclick: "utilsLoadingModal({op: 'showProjectRequirement', project_id: #{project.id}})", class: 'btn btn-sm btn-default' do %>
+                                <i class="fa fa-tasks"></i> <%= mt(:project_requirement) %>
+                            <% end %>
+                        </div>
+                        <div class="mt-1">
+                            <%= render partial: 'projects/work_board/new_call_record_form', locals: { project: project } %>
+                        </div>
+                        <div class="tab-body">
+                            <%= render partial: 'call_records/remote_index', locals: { call_records: project.call_records.order(id: :desc), project_id: project.id } if index.zero? %>
+                        </div>
+                    </div>
+                <% end %>
+            </div>
+        </div>
+    </div>
+<% else %>
+    <div class="card p-2">
+        <div class="p-4 text-center">
+            <h5 class="text-gray mb-0"><%= t(:not_found) %></h5>
+        </div>
+    </div>
+<% end %>

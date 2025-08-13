@@ -1,0 +1,4 @@
+$('select#hospital_department_id').html('<%= @hospital_department_options.html_safe %>');
+<% if @hospital_department_id.present? %>
+$('select#hospital_department_id').val(<%= @hospital_department_id %>).change();
+<% end %>

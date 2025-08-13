@@ -1,0 +1,69 @@
+<%= model_error_tag(@company) %>
+
+<div class="row">
+    <div class="col-12 form-group">
+        <%= company_category_badge(@company.category) %>
+        <%= company_signed_badge(@company.is_signed?) %>
+        <span class="badge badge-light"><%= show_creator(@company) %></span>
+        <span class="badge badge-light"><%= show_timestamps(@company) %></span>
+    </div>
+
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :name %><span class="text-red">*</span>
+        <%= f.text_field :name, :required => true, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :name_abbr %><span class="text-red">*</span>
+        <%= f.text_field :name_abbr, :required => true, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :tax_id %>
+        <%= f.text_field :tax_id, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :industry %>
+        <%= f.select :industry, company_industry_options, { :include_blank => default_prompt }, :class => 'form-control select2' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :city %><span class="text-red">*</span>
+        <%= f.text_field :city, :required => true, :class => 'form-control autocomplete-city' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :address %>
+        <%= f.text_field :address, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :linkman %>
+        <%= f.text_field :linkman, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :phone %>
+        <%= f.text_field :phone, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :project_task_notice_email %>
+        <%= f.select :project_task_notice_email, ProjectTask::NOTICE_EMAIL.to_a.map(&:reverse), { include_blank: default_prompt }, class: 'form-control select2' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :project_task_notice_email_cc %><span class="text-red text-smaller">(多个邮箱用半角逗号","隔开)</span>
+        <%= f.text_field :project_task_notice_email_cc, class: 'form-control' %>
+    </div>
+    <div class="col-12 form-group">
+        <%= f.label :description %>
+        <%= f.text_area :description, :rows => 5, :class => 'form-control' %>
+    </div>
+    <div class="col-12 form-group">
+        <%= f.label :compliance %>
+        <%= f.text_area :compliance, :rows => 5, :class => 'form-control' %>
+    </div>
+    <div class="col-12 form-group">
+        <%= f.label :compliance_file %>
+        <%= link_to @company.compliance_file.url do %><%= fa_icon_tag('download') %> <%= t(:file) %><% end if @company.compliance_file.present? %>
+        <%= f.file_field :compliance_file, :class => 'form-control-file' %>
+    </div>
+
+</div>
+
+<script>
+    $('.autocomplete-city').autocomplete({ source: '/location_data/autocomplete_city.json', delay: 500 });
+</script>

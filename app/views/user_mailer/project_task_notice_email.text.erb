@@ -1,0 +1,54 @@
+<% if @category == 'A' %>
+    <% actual_price = @project_task.actual_price || @project_task.base_price %>
+感谢您使用海鄞咨询，以下是您最近一次安排的专家访谈信息，供您参考：
+访谈日期：<%= @project_task.started_at.strftime('%F') %>
+访谈时间：<%= @project_task.started_at.strftime('%H:%M') %>
+访谈编号：<%= @project_task.interview_no %>
+专家信息：<%= "#{@project.code}-#{@project.name}-#{@project_task.expert_level.capitalize} Expert ##{@expert.uid} #{@project_task.expert_name_for_external}" %>
+访谈时长：<%= @project_task.duration %>分钟
+收费时长：<%= @project_task.charge_duration %>分钟
+访谈费用：<%= actual_price %>元
+备注：<%= @project_task.memo %>
+<% elsif @category == 'B' %>
+    <% actual_price = @project_task.actual_price || @project_task.base_price %>
+您好
+
+感谢您使用海鄞咨询，以下是该专家访谈信息，供您参考：
+访谈日期：<%= @project_task.started_at_fwt %>
+访谈时长：<%= @project_task.duration %>分钟
+收费时长：<%= @project_task.charge_duration %>分钟
+专家信息：<%= "#{@project_task.expert_level.capitalize} Expert ##{@expert.uid} #{@project_task.expert_name_for_external}" %>
+<% r_f = @project_task.recruitment_fee_for_iqvia %>
+专家费率：专家费<%= r_f ? (@project_task.charge_rate * @project_task.expert_rate).round(0) - r_f : 'NA' %>+招募费<%= r_f || 'NA' %>/小时
+访谈费用：<%= actual_price %>元
+备注：<%= @project_task.memo %>
+<% elsif @category == 'C' %>
+    <% actual_price = @project_task.actual_price || @project_task.base_price %>
+    <% expert_rate = @project_task.expert_rate || 1 %>
+    <% tax_rate = @project_task.active_contract.tax_rate %>
+感谢您使用海鄞咨询，以下是您最近一次安排的专家访谈信息，供您参考：
+访谈日期：<%= @project_task.started_at.strftime('%F') %>
+访谈时间：<%= @project_task.started_at.strftime('%H:%M') %>
+专家信息：<%= "#{@project.code}-#{@project.name}-#{@project_task.expert_level.capitalize} Expert ##{@expert.uid} #{@project_task.expert_name_for_external}" %>
+专家背景：<%= @project_task.expert.description %>
+
+访谈时长：<%= @project_task.duration %>分钟
+专家倍率：<%= expert_rate %>
+收费时长：<%= ((@project_task.charge_duration.to_f) / 60 * expert_rate).round(2) %>Credit
+基础费率：<%= @project_task.is_taxed ? "#{@project_task.charge_rate}/小时(含税)" : "#{@project_task.charge_rate}/小时(不含税)" %>
+<% if @project_task.is_taxed %>
+访谈费用：<%= actual_price %>元(含税)
+<% else %>
+访谈费用：<%= actual_price %>元(不含税)，<%= actual_price * (1 + tax_rate) %>元(含税)
+<% end %>
+备注：<%= @project_task.memo %>
+<% else %>
+
+<% end %>
+
+*如果您对访谈时长有异议，请在收到邮件后48小时内回复，超过48小时，我们默认时长确认
+如果对我们的服务有任何意见和建议，欢迎随时与我们联系；谢谢您的支持，任何项目需求，请随时发送至 project@hci-consulting.com 或与您熟悉的项目经理直接取得联系。
+
+此致
+海鄞咨询
+www.hci-consulting.com

@@ -1,0 +1,106 @@
+<div class="d-flex justify-content-between mb-4">
+    <h3 class="text-bold mt-4 ml-4">
+        <span>奋战40天智慧大额存单累计</span><br>
+        <span>销售数据分析日报<span style="font-size: 18px;">（<%= @period.map{|item| item.strftime('%m.%d')}.join('-') %>）</span></span>
+    </h3>
+    <%= image_pack_tag 'czbank_logo_tr.png', style: 'height: 90px; margin-top: -15px; margin-right: -15px;' %>
+</div>
+
+<div class="text-center mb-4">
+    <span class="chart_sale_field_font">累计总销售额：</span>
+    <span class="chart_sale_value_font"><%= @sum_ranking.sum{|item| item[:sale_value]} %></span>
+    <span class="chart_sale_field_font mr-5">万元</span>
+    <span class="chart_sale_field_font">累计总销售笔数：</span>
+    <span class="chart_sale_value_font"><%= @sum_ranking.sum{|item| item[:bill_count]} %></span>
+    <span class="chart_sale_field_font">笔</span>
+</div>
+
+<div class="text-center">
+    <div class="chart_section_title mt-4 mb-2">机构累计销售金额榜</div>
+</div>
+<div class="text-center">
+    <div id="chart1-sum" style="height: 360px;"></div>
+</div>
+
+<div class="text-center">
+    <div class="chart_section_title mt-4 mb-4">机构目标完成率明细</div>
+</div>
+
+<div class="text-center mb-4">
+    <table class="table table-sm table-border-dark nowrap card-text text-center text-bold">
+        <thead>
+        <tr style="background: #cecece;">
+            <th>机构</th>
+            <th>累计销量总计（万元）</th>
+            <th>累计出单笔数总计</th>
+            <th>总目标（万元）</th>
+            <th style="background: #fcc000;">完成率</th>
+        </tr>
+        </thead>
+        <tbody>
+        <% @sum_ranking.each do |item| %>
+            <tr>
+                <td><%= item[:org_name] %></td>
+                <td><%= item[:sale_value] %></td>
+                <td><%= item[:bill_count] %></td>
+                <td><%= item[:sale_target].zero? ? '/' : item[:sale_target] %></td>
+                <td><%= item[:sale_rate] < 0 ? '/' : "#{(item[:sale_rate] * 100).round}%" %></td>
+            </tr>
+        <% end %>
+        <tr style="background: #fcc000;">
+            <td>总计</td>
+            <td><%= @sum_ranking.sum{|item| item[:sale_value]} %></td>
+            <td><%= @sum_ranking.sum{|item| item[:bill_count]} %></td>
+            <td><%= @sum_ranking.sum{|item| item[:sale_target]} %></td>
+            <td><%= "#{(@sum_ranking.sum{|item| item[:sale_value]} * 100.0 / @sum_ranking.sum{|item| item[:sale_target]}).round}%" %></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    $(function(){
+        let chart1 = echarts.init(document.getElementById('chart1-sum'), 'default');
+        let option1 = {
+            grid: {
+                bottom: '25%',
+            },
+            tooltip: {
+                trigger: 'item'
+            },
+            xAxis: {
+                type: 'category',
+                data: <%= @sum_ranking.map{|item| item[:org_name]}.to_json.html_safe %>,
+                axisLabel: {
+                    interval: 0,
+                    rotate: 45,
+                    fontWeight: 'bold',
+                    height: 100
+                },
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series: [
+                {
+                    data: <%= @sum_ranking.map{|item| item[:sale_value]}.to_json.html_safe %>,
+                    type: 'bar',
+                    barWidth: 10,
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: '#d11407' },
+                            { offset: 1, color: '#71100e' }
+                        ])
+                    },
+                    label: {
+                        show: true,
+                        position: 'top',
+                        color: '#333',
+                        fontWeight: 'bold'
+                    }
+                }
+            ]
+        };
+        chart1.setOption(option1);
+    })
+</script>

@@ -1,0 +1,65 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('cny') %> <%= mt(:candidate_payment_info) %></h5>
+        <%= link_to fa_icon_tag('close'), 'javascript:history.go(-1);', :class => 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <div class="row">
+            <div class="col-12 d-flex flex-column flex-lg-row justify-content-between">
+                <h6>
+                    <span class="text-gray mr-3"><%= "# #{@candidate.uid}" %></span>
+                    <span><%= @candidate.last_name %> <%= @candidate.first_name %></span>
+                </h6>
+            </div>
+        </div>
+
+        <div class="p-1 table-responsive">
+            <table class="table table-sm table-striped border nowrap card-text">
+                <thead>
+                <tr>
+                    <th><%= mt(:candidate_payment_info, :category) %></th>
+                    <th><%= mt(:candidate_payment_info, :bank) %></th>
+                    <th><%= mt(:candidate_payment_info, :sub_branch) %></th>
+                    <th><%= mt(:candidate_payment_info, :account) %></th>
+                    <th><%= mt(:candidate_payment_info, :username) %></th>
+                    <th><%= mt(:candidate_payment_info, :id_number) %></th>
+                    <th><%= mt(:candidate_payment_info, :created_at) %></th>
+                    <th class="action"><%= t(:operation) %></th>
+                </tr>
+                </thead>
+                <tbody>
+                <% @payment_infos.each do |payment_info| %>
+                    <tr>
+                        <td><%= candidate_payment_info_category_badge(payment_info.category) %></td>
+                        <td><%= payment_info.bank %></td>
+                        <td><%= payment_info.sub_branch %></td>
+                        <td><%= payment_info.account %></td>
+                        <td><%= payment_info.username %></td>
+                        <td><%= payment_info.id_number %></td>
+                        <td><%= payment_info.created_at.strftime('%F %T') %></td>
+                        <td class="action">
+                            <div class="btn-group">
+                                <%= link_to edit_candidate_payment_info_path(payment_info), :class => 'btn btn-dark btn-xs' do %>
+                                    <%= fa_icon_tag('edit') %> <%= t('action.edit') %>
+                                <% end if can?(:edit, CandidatePaymentInfo) %>
+                                <%= link_to candidate_payment_info_path(payment_info), :method => :delete, :class => 'btn btn-danger btn-xs',
+                                            :data => { :confirm => t(:sure_to_delete) } do %>
+                                    <%= fa_icon_tag('trash') %> <%= t('action.delete') %>
+                                <% end if can?(:destroy, CandidatePaymentInfo) %>
+                            </div>
+                        </td>
+                    </tr>
+                <% end %>
+                <tr>
+                    <td colspan="8" align="center">
+                        <%= link_to new_payment_info_candidate_path(@candidate, return_to: request.path), :class => 'btn btn-primary btn-xs' do %>
+                                <%= fa_icon_tag('plus') %> <%= t('action.new_model', :model => mt(:candidate_payment_info)) %>
+                        <% end if can?(:new_payment_info, Candidate) %>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,5 @@
+<% if ProjectTask::NOTICE_EMAIL.keys.include? @project_task.notice_email %>
+window.open('<%= "/rails/mailers/user_mailer/project_task_notice_email.html?id=#{@project_task.id}&category=#{@project_task.notice_email}".html_safe %>');
+<% else %>
+alert('邮件模板不合法');
+<% end %>

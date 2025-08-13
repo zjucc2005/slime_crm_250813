@@ -1,0 +1,303 @@
+<%= render partial: 'shared/loading_modal' %>
+
+<div class="card">
+    <div class="card-header">
+        <h5><%= model_icon('Doctor') %> <%= mt(:doctor) %></h5>
+        <%#= link_to fa_icon_tag('close'), 'javascript:history.go(-1);', class: 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <div class="row">
+            <div class="col-12 d-flex flex-column flex-lg-row justify-content-between">
+                <h6>
+                    <span class="text-gray mr-3"><%= "# #{@doctor.uid}" %></span>
+                    <span class="mr-2" style="line-height: 1.5;">
+                        <%= render partial: 'candidates/widgets/is_available_dropdown', locals: { candidate: @doctor } %>
+                    </span>
+                    <span><%= @doctor.last_name %> <%= @doctor.first_name %></span>
+                </h6>
+
+                <div class="btn-group btn-group-sm">
+                    <div class="btn-group btn-group-sm">
+                        <%= render :partial => 'candidates/widgets/expert_card', :locals => { :uid => @doctor.id } %>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <%= render :partial => 'candidates/widgets/related_projects', :locals => { :candidate => @doctor } %>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <%= render :partial => 'candidates/widgets/add_to_project_modal', :locals => { :uid => @doctor.id } %>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <%= render partial: 'candidates/widgets/call_records', locals: { candidate: @doctor } %>
+                    </div>
+                    <%= link_to comments_candidate_path(@doctor), class: 'btn btn-default' do %>
+                        <%= fa_icon_tag('commenting') %> <%= t(:candidate_comment) %>
+                        <%= count_badge(@doctor.comments.joins(:creator).where('users.user_channel_id': current_user.user_channel_id).count) %>
+                    <% end if false # can?(:comments, Candidate) %>
+                    <%= link_to project_tasks_candidate_path(@doctor), class: 'btn btn-default' do %>
+                        <%= fa_icon_tag('tags') %> <%= mt(:candidate, :interview_task) %>
+                        <%= count_badge(normal_project_task_count(@doctor)) %>
+                    <% end if can?(:project_tasks, Candidate) %>
+                    <%= link_to payment_infos_candidate_path(@doctor), class: 'btn btn-default' do %>
+                        <%= fa_icon_tag('cny') %> <%= t(:candidate_payment_info) %>
+                        <%= count_badge(@doctor.payment_infos.count) %>
+                    <% end if can?(:payment_infos, Candidate) %>
+                    <%= link_to edit_doctor_path(@doctor), class: 'btn btn-dark' do %>
+                        <%= fa_icon_tag('edit') %> <%= t('action.edit_model', :model => mt(:doctor)) %>
+                    <% end if can?(:edit, Candidate) %>
+                    <%= link_to doctor_path(@doctor), :method => :delete, class: 'btn btn-danger', :data => { :confirm => t(:sure_to_delete) } do %>
+                        <%= fa_icon_tag('trash') %> <%= t('action.delete_model', :model => mt(:doctor)) %>
+                    <% end if can?(:destroy, Candidate) && @doctor.can_delete? %>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- left section -->
+            <div class="col-lg-9 col-12">
+                <!-- 基本信息 -->
+                <div class="badge badge-info mb-3 px-4"><%= t(:base_info) %></div>
+                <div class="row border-bottom mb-3">
+                    <div class="col-12 form-group">
+                        <% @candidate = @doctor %>
+                        <span class="badge badge-warning"><%= show_candidate_data_source %></span>
+                        <span class="badge badge-light"><%= show_candidate_creator %></span>
+                        <span class="badge badge-light"><%= show_timestamps(@doctor) %></span>
+                    </div>
+
+                    <!-- content -->
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :name) %></span>
+                        </div>
+                        <%= content_tag :span, @doctor.name, class: 'form-control' %>
+                    </div>
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :nickname) %></span>
+                        </div>
+                        <%= content_tag :span, @doctor.nickname, class: 'form-control' %>
+                    </div>
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :category) %></span>
+                        </div>
+                        <%= content_tag :span, Doctor::CATEGORY[@doctor.category2], class: 'form-control' %>
+                    </div>
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :gender) %></span>
+                        </div>
+                        <%= content_tag :span, Candidate::GENDER[@doctor.gender], class: 'form-control' %>
+                    </div>
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :date_of_birth) %></span>
+                        </div>
+                        <%= content_tag :span, @doctor.date_of_birth.try(:strftime, '%F'), class: 'form-control' %>
+                    </div>
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :phone) %></span>
+                        </div>
+                        <%= content_tag :span, @doctor.phone, class: 'form-control' %>
+                    </div>
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :phone1) %></span>
+                        </div>
+                        <%= content_tag :span, @doctor.phone1, class: 'form-control' %>
+                    </div>
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :email) %></span>
+                        </div>
+                        <%= content_tag :span, @doctor.email, class: 'form-control' %>
+                    </div>
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :wechat) %></span>
+                        </div>
+                        <%= content_tag :span, @doctor.property['wechat'], class: 'form-control' %>
+                    </div>
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :haodf_id) %></span>
+                        </div>
+                        <%= content_tag :span, class: 'form-control' do %>
+                            <% if @doctor.property['haodf_url'].present? %>
+                                <%= link_to @doctor.haodf_id, @doctor.property['haodf_url'], target: '_blank' %>
+                            <% else %>
+                                <%= @doctor.haodf_id %>
+                            <% end %>
+                        <% end %>
+                    </div>
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :inquiry) %></span>
+                        </div>
+                        <%= content_tag :span, @doctor.inquiry, class: 'form-control' %>
+                    </div>
+                    <div class="col-lg-12 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :file) %></span>
+                        </div>
+                        <% if @doctor.file.present? %>
+                            <%= link_to @doctor.file.identifier, @doctor.file.url, target: '_blank', class: 'form-control' %>
+                        <% else %>
+                            <%= content_tag :span, nil, class: 'form-control' %>
+                        <% end %>
+                    </div>
+                    <div class="col-12 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :sign_file) %></span>
+                        </div>
+                        <% if @doctor.sign_file.present? %>
+                            <%= image_tag @doctor.sign_file.url, class: 'img-thumbnail', style: 'max-height: 64px;' %>
+                        <% else %>
+                            <%= content_tag :span, nil, class: 'form-control' %>
+                        <% end %>
+                    </div>
+                </div>
+
+                <!-- 工作经历 -->
+                <div class="badge badge-info mb-3 px-4"><%= t(:work_experience) %></div>
+                <% exp = @doctor.experiences.hospital.first || @doctor.experiences.hospital.new %>
+                <div class="row border-bottom mb-3">
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :city) %></span>
+                        </div>
+                        <%= content_tag :span, @doctor.city, class: 'form-control' %>
+                    </div>
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate_experience, :hospital) %></span>
+                        </div>
+                        <%= content_tag :span, class: 'form-control' do %>
+                            <span class="badge badge-danger"><%= exp.org_en %></span>
+                            <%= exp.org_cn %>
+                        <% end %>
+                    </div>
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate_experience, :department) %></span>
+                        </div>
+                        <%= content_tag :span, exp.department, class: 'form-control' %>
+                    </div>
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate_experience, :title) %></span>
+                        </div>
+                        <%= content_tag :span, exp.title, class: 'form-control' %>
+                    </div>
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate_experience, :title_hospital) %></span>
+                        </div>
+                        <%= content_tag :span, exp.title1, class: 'form-control' %>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :cpt) %></span>
+                        </div>
+                        <%= content_tag :span, @doctor.cpt, class: 'form-control' %>
+                    </div>
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :cpt_taxed) %></span>
+                        </div>
+                        <%= content_tag :span, boolean_display(@candidate.cpt_taxed), class: 'form-control' %>
+                    </div>
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :currency) %></span>
+                        </div>
+                        <%= content_tag :span, currency_display(@doctor.currency), class: 'form-control' %>
+                    </div>
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :is_kol) %></span>
+                        </div>
+                        <%= content_tag :span, boolean_display(@doctor.is_kol), class: 'form-control' %>
+                    </div>
+                    <div class="col-12 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :expertise) %></span>
+                        </div>
+                        <%= text_area_tag :expertise, @doctor.expertise, rows: 2, disabled: true, class: 'form-control bg-white' %>
+                    </div>
+                    <div class="col-12 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :description) %></span>
+                        </div>
+                        <%= text_area_tag :description, @doctor.description, rows: 5, disabled: true, class: 'form-control bg-white' %>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= mt(:candidate, :yibaotanpan_year) %></span>
+                        </div>
+                        <%= content_tag :span, (@doctor.yibaotanpan_year.join(',') rescue nil), class: 'form-control' %>
+                    </div>
+                    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><%= '加入医保列表' %></span>
+                        </div>
+                        <%= content_tag :span, boolean_display(@doctor.is_yibao), class: 'form-control' %>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- right section -->
+            <div class="col-lg-3 col-12">
+                <ul class="nav nav-tabs mt-3">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-toggle="tab" href="#call_records">
+                            <%= mt(:call_record) %>
+                            <%#= count_badge(@doctor.call_records.count) %>
+                        </a>
+                    </li>
+                </ul>
+                 
+                <!-- Tab panes -->
+                <div class="tab-content">
+                    <div class="tab-pane active" id="call_records">
+                        <div class="candidate-comment-group mt-3">
+                            <% @call_records.each do |call_record| %>
+                                <div class="candidate-comment-unit">
+                                    <div>
+                                        <span class="badge badge-light"><%= show_creator(call_record) %></span>
+                                        <span class="badge badge-light"><%= "#{mt(:user, :created_at)}: #{call_record.created_at.strftime('%F %T')}" %></span>
+                                    </div>
+                                    <% if call_record.project %>
+                                    <div>
+                                        <span class="badge badge-light"><%= call_record.project&.name %></span> /
+                                        <span class="badge badge-light"><%= call_record.project_requirement&.title %></span>
+                                    </div>
+                                    <% end %>
+                                    <% call_record.memo_logs.each do |log| %>
+                                        <div class="text-smaller"><%= [log[0].to_time.strftime('%F %T'), log[1]].join(' ') %></div>
+                                    <% end %>
+                                </div>
+                            <% end %>
+                            <% @candidate_comments.each do |comment| %>
+                                <div class="candidate-comment-unit">
+                                    <div>
+                                        <span class="badge badge-light"><%= show_creator(comment) %></span>
+                                        <span class="badge badge-light"><%= "#{mt(:user, :created_at)}: #{comment.created_at.strftime('%F %T')}" %></span>
+                                    </div>
+                                    <p class="content"><%= content_tag(:i, nil, class: 'fa fa-flag text-red') if comment.is_top? %><%= comment.content %></p>
+                                </div>
+                            <% end%>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,140 @@
+<%= render partial: 'company_summaries/widgets/nav', locals: { active: 2 } %>
+
+<div id="app" class="card p-2 mb-2">
+    <el-row :gutter="10" class="mb-2">
+        <el-col :lg="6" :md="12">
+            <label class="text-smaller">统计月份</label>
+            <el-date-picker
+                v-model="search_form.datetime"
+                @change="load_chart_data"
+                type="month"
+                size="small"
+                value-format="yyyy-MM-dd"
+                placeholder="选择月份"
+                style="width: 100%;"
+            />
+        </el-col>
+        <el-col :lg="6" :md="12">
+            <el-button @click="load_chart_data" size="small" plain style="margin-top: 1.9rem;">
+                <i class="el-icon-refresh-right"></i> 刷新
+            </el-button>
+        </el-col>
+    </el-row>
+    <div ref="pie_chart" style="height: 480px;"></div>
+    <div ref="line_chart" style="height: 480px;"></div>
+
+
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            search_form: {
+                datetime: '<%= params[:datetime] || (Time.now.beginning_of_month - 1.month).strftime('%F') %>'
+            },
+            res_data: {},
+            pie_chart: null, // ref
+            pie_chart_data: {},
+            line_chart: null, // ref
+            line_chart_data: {}
+        },
+        mounted: function(){
+            this.$nextTick(function(){
+                this.load_chart_data()
+            })
+        },
+        methods: {
+            load_chart_data () {
+                let _this_ = this;
+                $.get('/company_summaries/v_summary_chart', this.search_form, function (res) {
+                    _this_.res_data = res.data
+                    let _data_ = res.data
+                    if (_data_.length === 0) {
+                        _data_ = [{ name: '无数据', income: 0, profit: 0 }]
+                    }
+                    _this_.set_pie_chart(_data_)
+                    _this_.set_line_chart(_data_)
+                })
+            },
+            set_pie_chart (data) {
+                let pie_chart = this.$echarts.init(this.$refs.pie_chart, 'default');
+                let pie_option = {
+                    title: {
+                        text: '总访谈收入占比',
+                        subtext: 'Percentage of Revenue',
+                        left: 'left'
+                    },
+                    tooltip: {
+                        trigger: 'item',
+                    },
+                    series: [
+                        {
+                            name: '总访谈收入',
+                            type: 'pie',
+                            radius: '60%',
+                            data: data.map(e => { return { value: e.income, name: e.name } }),
+                            label: {
+                                alignTo: 'edge',
+                                formatter: '{name|{b}}({c}, {d}%)',
+                                minMargin: 5,
+                                edgeDistance: 10,
+                                lineHeight: 15,
+                                rich: {
+                                  name: {
+                                    fontWeight: 'bold'
+                                  }
+                                }
+                            },
+                            emphasis: {
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            }
+                        }
+                    ]
+                };
+                pie_chart.setOption(pie_option);
+            },
+            set_line_chart (data) {
+                let line_chart = this.$echarts.init(this.$refs.line_chart, 'default');
+                let line_option = {
+                    title: {
+                        text: '总访谈收入排名',
+                        subtext: 'Revenue Ranking',
+                        left: 'left'
+                    },
+                    legend: {},
+                    xAxis: {
+                        type: 'category',
+                        data: data.map(e => e.name)
+                    },
+                    yAxis: {
+                        type: 'value'
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: {
+                            type: 'shadow'
+                        }
+                    },
+                    series: [
+                        {
+                            name: '总访谈收入',
+                            data: data.map(e => e.income),
+                            type: 'bar'
+                        },
+                        {
+                            name: '总访谈毛利',
+                            data: data.map(e => e.profit),
+                            type: 'bar'
+                        }
+                    ]
+                };
+                line_chart.setOption(line_option);
+            }
+        }
+    });
+</script>

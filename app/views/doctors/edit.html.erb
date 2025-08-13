@@ -1,0 +1,17 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= model_icon('Doctor') %> <%= t('action.edit_model', :model => mt(:doctor)) %></h5>
+        <%= link_to fa_icon_tag('close'), 'javascript:history.go(-1);', :class => 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <%= form_for @doctor, :url => doctor_path(@doctor), :html => { :multipart => true, :id => "edit_doctor_#{@doctor.id}" } do |f| %>
+            <%= render :partial => 'form', :locals => { :f => f } %>
+
+            <div class="form-group mb-0">
+                <%= f.submit t('action.save'), :class => 'btn btn-submit' %>
+                <%= link_to t('action.back'), 'javascript:history.go(-1);', :class => 'btn btn-back' %>
+            </div>
+        <% end %>
+    </div>
+</div>

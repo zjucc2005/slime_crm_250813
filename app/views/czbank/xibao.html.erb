@@ -1,0 +1,151 @@
+<%= render partial: 'utils/loading_modal' %>
+<div class="card p-2 mb-1">
+    <%= form_for CzbankXibao.new, url: xibao_create_czbank_index_path, method: :post do |f| %>
+        <div class="row">
+            <div class="col-lg-2 col-12 form-group">
+                <%= f.label :org_name, '归属机构' %><span class="text-red">*</span>
+                <%= f.select :org_name, CzbankXibao::ORG_LIST, { include_blank: default_prompt }, required: true, class: 'form-control select2' %>
+            </div>
+            <div class="col-lg-2 col-12 form-group">
+                <%= f.label :staff_name, '绩效认领人' %>
+                <%= f.text_field :staff_name, class: 'form-control' %>
+            </div>
+            <div class="col-lg-2 col-12 form-group">
+                <%= f.label :sale_value, '交易金额(万元)' %><span class="text-red">*</span>
+                <%= f.number_field :sale_value, min: 0, required: true, class: 'form-control' %>
+            </div>
+            <div class="col-lg-2 col-12 form-group">
+                <%= f.label :belong_date, '交易日期(不填默认为当天)' %>
+                <%= f.date_field :belong_date, value: Time.now.strftime('%F'), class: 'form-control' %>
+            </div>
+            <!--
+            <div class="col-lg-2 col-12 form-group">
+                <%#= f.label :bill_count, '笔数(不填默认为1)' %>
+                <%#= f.number_field :bill_count, value: 1, min: 1, class: 'form-control' %>
+            </div>
+            -->
+            <div class="col-lg-2 col-12 form-group">
+                <%= label_tag :space, '&nbsp;'.html_safe %><br>
+                <%= submit_tag '保存并生成喜报', class: 'btn btn-sm btn-danger w-100' %>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-2 col-6 form-group">
+                <%= button_tag type: 'submit', class: 'btn btn-sm btn-primary w-100' do %>
+                    <i class="fa fa-plus"></i> 添加到明细
+                <% end if false %>
+            </div>
+        </div>
+    <% end %>
+</div>
+<div class="card p-2 mb-1">
+    <%= form_tag xibao_import_czbank_index_path, method: :post, multipart: true do %>
+        <div class="row">
+            <div class="col-lg-2 col-6 form-group">
+                <label>选择《明细.xlsx》文件</label>
+                <%= file_field_tag :file, required: true, class: 'form-control-file' %>
+            </div>
+            <div class="col-lg-2 col-6 form-group">
+                <%= label_tag :space, '&nbsp;'.html_safe %><br>
+                <%= button_tag type: 'submit', class: 'btn btn-sm btn-primary w-100' do %>
+                    <i class="fa fa-upload"></i> 导入文件
+                <% end %>
+            </div>
+            <div class="col-lg-2 col-6 offset-lg-4 form-group">
+                <%= label_tag :space, '&nbsp;'.html_safe %><br>
+                <%= link_to '清空喜报数据', '#', class: 'btn btn-sm btn-dark w-100', data: { confirm: '危险操作!!确认要清空喜报数据吗?' } %>
+            </div>
+        </div>
+    <% end %>
+</div>
+
+<div class="row mb-2" id="workboard">
+    <div class="col-2 pr-0">
+        <ul class="nav nav-tabs-column flex-column mb-2">
+            <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#date_sum" onclick="loadCzbankXibaoList();">
+                    <div class="text-smaller" title="历史汇总">历史汇总</div>
+                </a>
+            </li>
+            <% @date_options.each_with_index do |date, index| %>
+                <li class="nav-item">
+                    <a class="nav-link <%= index.zero? ? 'active' : '' %>" data-toggle="tab" href="#date_<%= date %>" onclick="loadCzbankXibaoList('<%= date %>');">
+                        <div class="text-smaller" title="<%= date %>"><%= "#{date}#{index.zero? ? '(今天)' : '' }" %></div>
+                    </a>
+                </li>
+            <% end %>
+        </ul>
+    </div>
+    <div class="col-10 pl-0">
+        <!-- Tab panes -->
+        <div class="tab-content">
+            <div id="date_sum" class="container-fluid bg-white tab-pane">
+                <div class="tab-header">
+                    <h3 class="mb-0">历史汇总 - 大额存单销量表</h3>
+                </div>
+                <div class="tab-body">
+                </div>
+            </div>
+            <% @date_options.each_with_index do |date, index| %>
+                <div id="date_<%= date %>" class="container-fluid bg-white tab-pane <%= index.zero? ? 'active' : '' %>">
+                    <div class="tab-header">
+                        <h3 class="mb-0"><%= date %> - 大额存单销量表</h3>
+                    </div>
+                    <div class="tab-body pb-4">
+                    </div>
+                </div>
+            <% end %>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function() {
+        loadCzbankXibaoList('<%= @date_options[0] %>');
+    });
+    function changeBgColor(e) {
+        if(e.className === '') {
+            e.className = 'table-danger'
+        } else if (e.className === 'table-danger') {
+            e.className = 'table-warning'
+        } else if (e.className === 'table-warning') {
+            e.className = 'table-success'
+        } else {
+            e.className = ''
+        }
+    }
+</script>
+
+<style>
+    .tab-container {
+        border-left: 1px solid #dee2e6;
+        border-right: 1px solid #dee2e6;
+        border-bottom: 1px solid #dee2e6;
+        padding: 15px;
+    }
+    .chart_sale_field_font {
+        font-size: 18px;
+        font-weight: 900;
+        color: #777;
+    }
+    .chart_sale_value_font {
+        display: inline-block;
+        font-size: 36px;
+        font-weight: 900;
+        color: red;
+        -webkit-box-reflect: below -27px -webkit-linear-gradient(transparent,transparent 40%,rgba(255,255,255,.3));
+    }
+    .chart_section_title {
+        background: linear-gradient(to right, #fa4546, #86302d);
+        display: inline-block;
+        min-width: 400px;
+        padding: 8px 16px;
+        color: #fff;
+        font-size: 20px;
+        font-weight: 800;
+        border-radius: 25px;
+    }
+    .table-border-dark th, .table-border-dark td {
+        border: 2px solid #000 !important;
+    }
+</style>

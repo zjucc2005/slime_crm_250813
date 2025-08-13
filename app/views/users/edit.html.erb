@@ -1,0 +1,18 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('edit') %> <%= t('action.edit_model', :model => mt(:user)) %></h5>
+        <%= link_to fa_icon_tag('close'), 'javascript:history.go(-1);', :class => 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <%= form_for @user do |f| %>
+            <%= model_error_tag(@user) %>
+            <%= render :partial => 'form_edit', :locals => { :f => f } %>
+
+            <div class="form-group mb-0">
+                <%= f.submit t('action.submit'), :class => 'btn btn-submit' %>
+                <%= link_to t('action.back'), 'javascript:history.go(-1);', :class => 'btn btn-back' %>
+            </div>
+        <% end %>
+    </div>
+</div>

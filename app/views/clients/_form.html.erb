@@ -1,0 +1,138 @@
+<%= model_error_tag(@client) %>
+<div class="mb-3">
+    <span class="badge badge-light"><%= show_creator(@client) %></span>
+    <span class="badge badge-light"><%= show_timestamps(@client) %></span>
+</div>
+<div class="row border-bottom mb-3">
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :company, mt(:company) %>
+        <%= f.select :company_id, company_options, { include_blank: default_prompt }, class: 'form-control select2' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :gender %><span class="text-red">*</span>
+        <%= f.select :gender, Candidate::GENDER.to_a.map(&:reverse), { include_blank: false }, class: 'form-control select2-gender-with-icon' %>
+    </div>
+</div>
+<div class="badge badge-info mb-3 px-4"><%= t(:base_info) %></div>
+<div class="row">
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :last_name, mt(:candidate, :name) %><span class="text-red">*</span>
+        <div class="form-group-range">
+            <div class="form-group-range-input">
+                <%= f.text_field :last_name, :required => true, class: 'form-control', placeholder: "#{mt(:candidate, :last_name)}*" %>
+            </div>
+            <div class="form-group-range-input">
+                <%= f.text_field :first_name, class: 'form-control', placeholder: mt(:candidate, :first_name) %>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :nickname %>
+        <%= f.text_field :nickname, class: 'form-control' %>
+    </div>
+</div>
+<div class="row border-bottom mb-3">
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :title %>
+        <%= f.text_field :title, class: 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :department %>
+        <%= f.text_field :department, class: 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :city %>
+        <%= f.text_field :city, class: 'form-control autocomplete-city' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :address %>
+        <%= f.text_field :address, class: 'form-control' %>
+    </div>
+</div>
+<div class="badge badge-warning mb-3 px-4"><%= t(:contact_info) %></div>
+<div class="row">
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :phone, mt(:client, :phone) %>
+        <%= f.text_field :phone, class: 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :phone1, mt(:client, :phone1) %>
+        <%= f.text_field :phone1, class: 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :wechat %>
+        <%= f.text_field :wechat, class: 'form-control' %>
+    </div>
+</div>
+<div class="row border-bottom mb-3">
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :email, mt(:client, :email) %><span class="text-red">*</span>
+        <div class="input-group">
+            <%= f.email_field :email, required: true, class: 'form-control' %>
+            <%= link_to "mailto:#{@client.email}", target: '_blank', class: 'input-group-append btn btn-light' do %>
+                <i class="fa fa-envelope-open-o"></i>
+            <% end %>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :email1, mt(:client, :email1) %>
+        <div class="input-group">
+            <%= f.email_field :email1, class: 'form-control' %>
+            <%= link_to "mailto:#{@client.email1}", target: '_blank', class: 'input-group-append btn btn-light' do %>
+                <i class="fa fa-envelope-open-o"></i>
+            <% end %>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :linkedin %>
+        <div class="input-group">
+            <%= f.text_field :linkedin, class: 'form-control' %>
+            <%= link_to @client.linkedin, target: '_blank', class: 'input-group-append btn btn-light' do %>
+                <i class="fa fa-linkedin"></i>
+            <% end %>
+        </div>
+    </div>
+</div>
+<div class="badge badge-success mb-3 px-4"><%= t(:employer_info) %></div>
+<div class="row border-bottom mb-3">
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :employer0, mt(:client, :employer0) %>
+        <%= f.text_field :employer0, class: 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :employer1, mt(:client, :employer1) %>
+        <%= f.text_field :employer1, class: 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :employer2, mt(:client, :employer2) %>
+        <%= f.text_field :employer2, class: 'form-control' %>
+    </div>
+</div>
+<div class="badge badge-primary mb-3 px-4"><%= t(:education_info) %></div>
+<div class="row border-bottom mb-3">
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :bachelor, mt(:candidate_experience, :bachelor) %>
+        <%= text_field_tag :"exps[0][org_cn]", (@exps[0].org_cn rescue nil), class: 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :master, mt(:candidate_experience, :master) %>
+        <%= text_field_tag :"exps[1][org_cn]", (@exps[1].org_cn rescue nil), class: 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :doctor, mt(:candidate_experience, :doctor) %>
+        <%= text_field_tag :"exps[2][org_cn]", (@exps[2].org_cn rescue nil), class: 'form-control' %>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :job_status %>
+        <%= f.select :job_status, Candidate::JOB_STATUS.to_a.map(&:reverse), {}, class: 'form-control select2' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :contact_status %>
+        <%= f.text_field :contact_status, class: 'form-control' %>
+    </div>
+</div>
+<script>
+    $('.autocomplete-city').autocomplete({ source: '/location_data/autocomplete_city.json', delay: 500 });
+</script>

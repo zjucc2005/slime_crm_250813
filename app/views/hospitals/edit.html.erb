@@ -1,0 +1,26 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= model_icon('Hospital') %> <%= t('action.edit_model', model: mt(:hospital)) %></h5>
+        <%= link_to fa_icon_tag('close'), return_to(hospitals_path), :class => 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <div class="row">
+            <div class="col-12 d-flex flex-column flex-lg-row justify-content-between">
+                <h6>
+                    <span class="text-gray mr-3"><%= "# #{@hospital.uid}" %></span>
+                    <span><%= @hospital.name %></span>
+                </h6>
+            </div>
+        </div>
+
+        <%= form_for @hospital do |f| %>
+            <%= render partial: 'form', locals: { f: f } %>
+
+            <div class="form-group mb-0">
+                <%= f.submit t('action.submit'), class: 'btn btn-submit' %>
+                <%= link_to t('action.back'), return_to(hospitals_path), class: 'btn btn-back' %>
+            </div>
+        <% end %>
+    </div>
+</div>

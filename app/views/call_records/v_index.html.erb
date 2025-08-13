@@ -1,0 +1,541 @@
+<div id="app">
+    <!-- 工具栏 -->
+    <el-card class="mb-1">
+        <el-radio-group v-model="category" size="mini" @input="category_change">
+            <el-radio-button label="expert">专家</el-radio-button>
+            <el-radio-button label="doctor">医生</el-radio-button>
+        </el-radio-group>
+        <el-button type="primary" size="mini" icon="el-icon-plus" @click="call_record_new">新增通话记录</el-button>
+        <el-button type="warning" size="mini" icon="el-icon-upload2" @click="import_dialog_visible = true">批量导入</el-button>
+        <el-button type="primary" size="mini" icon="el-icon-search" @click="search_form.visible = true">搜索</el-button>
+        <%# <el-button size="mini" @click="debug">DEBUG</el-button> %>
+    </el-card>
+    <!-- 通话记录列表 -->
+    <el-card class="box-card mb-1">
+        <el-table v-if="category == 'expert'" :data="call_records" size="mini" border stripe>
+            <el-table-column prop="uid" label="ID" width="62"></el-table-column>
+            <el-table-column prop="category" label="类型" width="46">
+                <template slot-scope="scope">
+                    {{ category_dict[scope.row.category] }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="name" label="姓名" width="80">
+                <template slot-scope="scope">
+                    <el-link @click="call_record_edit(scope.row)" type="primary" class="cc-link">{{ scope.row.name }}</el-link>
+                </template>
+            </el-table-column>
+            <el-table-column prop="nickname" label="英文名" width="80"></el-table-column>
+            <el-table-column prop="gender" label="性别" width="46">
+                <template slot-scope="scope">
+                    {{ gender_dict[scope.row.gender] }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="phone" label="电话" width="120">
+                <template slot-scope="scope">
+                    <span v-if="scope.row.phone_visible">{{ scope.row.phone }}</span>
+                    <el-link v-else @click="show_phone(scope.row)" type="primary" class="cc-link">查看联系方式</el-link>
+                </template>
+            </el-table-column>
+            <el-table-column prop="company" label="公司"></el-table-column>
+            <el-table-column prop="department" label="部门"></el-table-column>
+            <el-table-column prop="title" label="职位"></el-table-column>
+            <el-table-column prop="remark" label="备注"></el-table-column>
+            <el-table-column prop="number_of_calls" label="拨打次数" width="70">
+                <template slot-scope="scope">
+                    {{ scope.row.memo_logs.length }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="creator" label="创建者" width="70"></el-table-column>
+            <el-table-column prop="updated_at" label="最后沟通时间" width="100">
+                <template slot-scope="scope">
+                    <el-tooltip :content="scope.row.last_logged_at.split(' ')[1]" placement="right">
+                        <el-button size="mini" type="text">{{ scope.row.updated_at.split(' ')[0] }}</el-button>
+                    </el-tooltip>
+                </template>
+            </el-table-column>
+            <el-table-column prop="memo" label="沟通记录">
+                <template slot-scope="scope">
+                    <el-link @click="call_record_edit(scope.row)" type="primary" class="cc-link">{{ scope.row.memo_logs.length ? scope.row.memo_logs[scope.row.memo_logs.length - 1][1] : '' }}</el-link>
+                </template>
+            </el-table-column>
+        </el-table>
+
+        <el-table v-if="category == 'doctor'" :data="call_records" size="mini" border stripe>
+            <el-table-column prop="uid" label="ID" width="62"></el-table-column>
+            <el-table-column prop="category" label="类型" width="46">
+                <template slot-scope="scope">
+                    {{ category_dict[scope.row.category] }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="name" label="姓名" width="80">
+                <template slot-scope="scope">
+                    <el-link @click="call_record_edit(scope.row)" type="primary" class="cc-link">{{ scope.row.name }}</el-link>
+                </template>
+            </el-table-column>
+            <el-table-column prop="gender" label="性别" width="46">
+                <template slot-scope="scope">
+                    {{ gender_dict[scope.row.gender] }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="phone" label="电话" width="120">
+                <template slot-scope="scope">
+                    <span v-if="scope.row.phone_visible">{{ scope.row.phone }}</span>
+                    <el-link v-else @click="show_phone(scope.row)" type="primary" class="cc-link">查看联系方式</el-link>
+                </template>
+            </el-table-column>
+            <el-table-column prop="company" label="医院"></el-table-column>
+            <el-table-column prop="department" label="科室"></el-table-column>
+            <el-table-column prop="title" label="职位"></el-table-column>
+            <el-table-column prop="title1" label="职称"></el-table-column>
+            <el-table-column prop="remark" label="备注"></el-table-column>
+            <el-table-column prop="academic_field" label="学术领域"></el-table-column>
+            <el-table-column prop="creator" label="创建者" width="70"></el-table-column>
+            <el-table-column prop="updated_at" label="最后沟通时间" width="100">
+                <template slot-scope="scope">
+                    <el-tooltip :content="scope.row.updated_at.split(' ')[1]" placement="right">
+                        <el-button size="mini" type="text">{{ scope.row.updated_at.split(' ')[0] }}</el-button>
+                    </el-tooltip>
+                </template>
+            </el-table-column>
+            <el-table-column prop="memo" label="沟通记录">
+                <template slot-scope="scope">
+                    <el-link @click="call_record_edit(scope.row)" type="primary" class="cc-link">{{ scope.row.memo_logs.length ? scope.row.memo_logs[scope.row.memo_logs.length - 1][1] : '' }}</el-link>
+                </template>
+            </el-table-column>
+        </el-table>
+    </el-card>
+    <!-- pagination -->
+    <el-pagination
+        :total="total"
+        :current-page.sync="page"
+        :page-size.sync="per_page"
+        :page-sizes="[10, 20, 50]"
+        @current-change="page_change"
+        @size-change="page_change"
+        background
+        layout="total, sizes, prev, pager, next, jumper"
+        style="text-align: center;"
+        >
+    </el-pagination>
+    <!-- 新增通话记录 -->
+    <el-dialog ref="form_dialog"
+        :title="form.id ? '编辑通话记录' : '新增通话记录'"
+        :visible.sync="form.visible"
+        :close-on-click-modal="false"
+        >
+        <el-form ref="form" :model="form" size="small" label-width="80px">
+            <el-form-item label="类型">
+                <el-radio-group v-model="category">
+                    <el-radio v-if="category == 'expert'" label="expert">专家</el-radio>
+                    <el-radio v-if="category == 'doctor'" label="doctor">医生</el-radio>
+                </el-radio-group>
+            </el-form-item>
+            <el-row>
+                <el-col :span="12">
+                    <el-form-item label="姓名" prop="name" :rules="form_rules.name">
+                        <el-input v-model="form.name" clearable></el-input>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item v-if="category == 'expert'" label="英文名" prop="nickname">
+                        <el-input v-model="form.nickname" clearable></el-input>
+                    </el-form-item>
+                </el-col>
+            </el-row>
+            <el-row>
+                <el-col :span="12">
+                    <el-form-item label="性别" prop="gender">
+                        <el-select v-model="form.gender" placeholder="Please select" clearable style="width: 100%;" >
+                            <el-option v-for="(v, k) in gender_dict" :key="k" :label="v" :value="k">
+                                <i v-if="k == 'male'" class="fa fa-male text-primary mr-2"></i>
+                                <i v-if="k == 'female'" class="fa fa-female text-danger mr-2"></i>
+                                {{ v }}
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="电话" prop="phone">
+                        <el-input v-model="form.phone" clearable></el-input>
+                    </el-form-item>
+                </el-col>
+            </el-row>
+            <el-row>
+                <el-col :span="12">
+                    <el-form-item label="邮箱" prop="email">
+                        <el-input v-model="form.email" clearable></el-input>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="城市" prop="city">
+                        <el-input v-model="form.city" clearable></el-input>
+                    </el-form-item>
+                </el-col>
+            </el-row>
+            <el-row>
+                <el-col :span="12">
+                    <el-form-item :label="category == 'doctor' ? '医院' : '公司'" prop="company">
+                        <el-input v-model="form.company" clearable></el-input>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item :label="category == 'doctor' ? '科室' : '部门'" prop="department">
+                        <el-input v-model="form.department" clearable></el-input>
+                    </el-form-item>
+                </el-col>
+            </el-row>
+            <el-row>
+                <el-col :span="12">
+                    <el-form-item label="职位" prop="title">
+                        <el-input v-model="form.title" clearable></el-input>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item v-if="category == 'doctor'" label="职称" prop="title1">
+                        <el-input v-model="form.title1" clearable></el-input>
+                    </el-form-item>
+                </el-col>
+            </el-row>
+            <el-form-item v-if="category == 'doctor'" label="学术领域" prop="academic_field">
+                <el-input v-model="form.academic_field" clearable></el-input>
+            </el-form-item>
+            <el-form-item label="备注" prop="remark">
+                <el-input v-model="form.remark" clearable></el-input>
+            </el-form-item>
+            <el-timeline style="margin-left: 10px;">
+                <el-timeline-item v-for="(item, index) in form.memo_logs" :key="index" :timestamp="item[0]">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>{{ item[1] }}</span>
+                        <el-button type="text" size="mini" icon="el-icon-delete" @click="deleteMemoLog(index)" style="color: #f56c6c; margin-left: 10px;"></el-button>
+                    </div>
+                </el-timeline-item>
+            </el-timeline>
+            <el-form-item label="沟通记录" prop="memo">
+                <el-input v-model="form.memo" type="textarea" :rows="1" clearable></el-input>
+            </el-form-item>
+        </el-form>
+        <span slot="footer">
+            <el-button size="mini" @click="form.visible = false">取消</el-button>
+            <el-button type="primary" size="mini" @click="submit_form">确定</el-button>
+        </span>
+    </el-dialog>
+    <!-- 批量导入 -->
+    <el-dialog ref="import_dialog"
+        title="批量导入"
+        :visible.sync="import_dialog_visible"
+        :close-on-click-modal="false"
+        >
+        <el-steps :active="0" class="cc-steps">
+            <el-step title="下载" icon="el-icon-download">
+                <template slot="title">
+                    <el-link v-if="category == 'expert'" href="/templates/import_call_record_template__expert.xlsx" type="primary">
+                        <i class="el-icon-document"></i> 下载导入模板 - 专家
+                    </el-link>
+                    <el-link v-if="category == 'doctor'" href="/templates/import_call_record_template__doctor.xlsx" type="primary">
+                        <i class="el-icon-document"></i> 下载导入模板 - 医生
+                    </el-link>
+                </template>
+            </el-step>
+            <el-step title="填写并选择" icon="el-icon-edit-outline">
+                <template slot="title">
+                    <el-upload
+                        ref="import_upload"
+                        action="index.html"
+                        :auto-upload="false"
+                        :limit="1"
+                        :on-change="file_change"
+                        :on-remove="file_remove"
+                        >
+                        <el-button type="primary" size="mini" plain icon="el-icon-document-checked">选择文件</el-button>
+                    </el-upload>
+                </template>
+            </el-step>
+            <el-step title="上传导入" icon="el-icon-upload2">
+                <template slot="title">
+                    <el-button type="primary" size="mini" icon="el-icon-check" 
+                        @click="submit_import"
+                        :disabled="import_data.length === 0"
+                        >
+                        提交导入
+                    </el-button>
+                </template>
+            </el-step>
+        </el-steps>
+    </el-dialog>
+    <!-- 搜索form -->
+    <el-dialog ref="search_dialog"
+        title="搜索"
+        :visible.sync="search_form.visible"
+        :close-on-click-modal="false"
+        width="30%"
+        >
+        <el-form ref="search_form" :model="search_form" size="small" label-width="80px">
+            <el-form-item label="创建时间" prop="created_at">
+                <el-col :span="11">
+                    <el-date-picker v-model="search_form.created_at_ge"
+                        type="date" value-format="yyyy-MM-dd"
+                        placeholder="开始日期" style="width: 100%;"></el-date-picker>
+                </el-col>
+                <el-col :span="2" style="text-align: center;">-</el-col>
+                <el-col :span="11">
+                    <el-date-picker v-model="search_form.created_at_le"
+                        type="date" value-format="yyyy-MM-dd"
+                        placeholder="结束日期"  style="width: 100%;"></el-date-picker>
+                </el-col>
+            </el-form-item>
+            <el-form-item label="姓名" prop="name">
+                <el-input v-model="search_form.name" clearable></el-input>
+            </el-form-item>
+            <el-form-item label="电话" prop="phone">
+                <el-input v-model="search_form.phone" clearable></el-input>
+            </el-form-item>
+            <el-form-item :label="category == 'doctor' ? '医院' : '公司'" prop="company">
+                <el-input v-model="search_form.company" clearable></el-input>
+            </el-form-item>
+        </el-form>
+        <span slot="footer">
+            <el-button size="mini" @click="search_form.visible = false">取消</el-button>
+            <el-button type="primary" size="mini" @click="search">确定</el-button>
+        </span>
+    </el-dialog>
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            category: '<%= params[:category] || 'expert' %>',
+            call_records: [],
+            page: 1,
+            per_page: 10,
+            total: 0,
+            search_form: {
+                visible: false,
+                created_at_ge: '',
+                created_at_le: '',
+                name: '',
+                phone: '',
+                company: ''
+            },
+            form: {
+                visible: false
+            },
+            form_fields: ['id', 'name', 'nickname', 'gender', 'phone', 'email', 'city', 'company', 'department', 'title', 'title1','academic_field', 'remark'],
+            form_rules: {
+                name: [
+                    { required: true, message: '姓名不能为空'},
+                ],
+            },
+            import_dialog_visible: false,
+            import_data: [],
+            category_dict: { expert: '专家', doctor: '医生' },
+            gender_dict: { male: '男', female: '女' }
+        },
+        mounted() {
+            this.load_call_records()
+        },
+        methods: {
+            call_record_new() {
+                this.form = { visible: true }
+            },
+            call_record_edit(call_record) {
+                let form = { visible: true }
+                for (let field of this.form_fields) {
+                    form[field] = call_record[field]
+                }
+                form.memo_logs = call_record.memo_logs
+                // 编辑时不回显memo字段，让用户输入新的沟通记录
+                form.memo = ''
+                this.form = form
+            },
+            category_change(e) {
+                this.category = e
+                this.reload_call_records()
+                window.history.pushState({}, '', 'v_index?category=' + e)
+            },
+            deleteMemoLog(index) {
+                this.$confirm('确定要删除这条沟通记录吗？', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    // 删除指定索引的memo_logs项目
+                    this.form.memo_logs.splice(index, 1)
+                    this.$message({
+                        type: 'success',
+                        message: '删除成功!'
+                    })
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    })
+                })
+            },
+            file_change(file, fileList) {
+                var type = file.name.split('.');
+                if (type[type.length - 1] !== 'xlsx' && type[type.length - 1] !== 'xls') {
+                    this.$message.error('只能选择excel文件导入');
+                    return false;
+                }
+                open_spreadsheet(file).then(res => {
+                    // console.log('res', res)
+                    let import_data = []
+                    let category = res.sheet_name == '医生' ? 'doctor' : 'expert'
+                    res.rows.forEach((row, index) => {
+                        if (index > 0 && row[0]?.trim()) {
+                            if (category == 'expert') {
+                                import_data.push({
+                                    category: category,
+                                    name: row[0],
+                                    nickname: row[1],
+                                    gender: { M: 'male', F: 'female' }[row[2]?.toUpperCase()] || '',
+                                    phone: row[3],
+                                    company: row[4],
+                                    department: row[5],
+                                    title: row[6],
+                                    remark: row[7],
+                                    memo: row[8]
+                                })
+                            }
+                            if (category == 'doctor') {
+                                import_data.push({
+                                    category: category,
+                                    name: row[0],
+                                    gender: { M: 'male', F: 'female' }[row[1]?.toUpperCase()] || '',
+                                    phone: row[2],
+                                    company: row[3],
+                                    department: row[4],
+                                    title: row[5],
+                                    title1: row[6],
+                                    academic_field: row[7],
+                                    remark: row[8],
+                                    memo: row[9]
+                                })
+                            }
+                        }
+                    })
+                    this.import_data = import_data
+                    // console.log('import_data', import_data)
+                })
+            },
+            file_remove(file, fileList) {
+                this.import_data = []
+            },
+            page_change() {
+                this.load_call_records()
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+            },
+            search() {
+                this.search_form.visible = false
+                this.reload_call_records()
+            },
+            show_phone(call_record) {
+                Vue.set(call_record, 'phone_visible', true)
+            },
+            async load_call_records() {
+                let params = {
+                    page: this.page,
+                    per_page: this.per_page,
+                    category: this.category
+                }
+                for (let field of ['created_at_ge', 'created_at_le', 'name', 'phone', 'company']) {
+                    if (this.search_form[field]) params[field] = this.search_form[field]
+                }
+                $.get('/call_records/v_load_index', params, (res) => {
+                    this.call_records = res.data.call_records
+                    this.total = res.data.total
+                })
+            },
+            async reload_call_records() {
+                this.page = 1
+                this.load_call_records()
+            },
+            async submit_form() {
+                this.$refs.form.validate().then(_ => {
+                    let url = '/call_records/v_create'
+                    let params = {}
+                    for (let field of this.form_fields) {
+                        params[field] = this.form[field]
+                    }
+                    params.category = this.form.category || this.category
+                    if (params.id) {
+                        url = '/call_records/v_update'
+                        // 更新操作时，发送当前的memo_logs数据
+                        if (this.form.memo_logs) {
+                            params.memo_logs = JSON.stringify(this.form.memo_logs)
+                        }
+                        // 只有用户主动输入memo时才发送memo字段
+                        if (this.form.memo && this.form.memo.trim()) {
+                            params.memo = this.form.memo.trim()
+                        }
+                    } else {
+                        // 创建操作时发送memo字段
+                        params.memo = this.form.memo?.trim()
+                    }
+                    // console.log('submit_form', params)
+                    $.ajax({
+                        type: 'POST', url: url, data: params,
+                        success: (res) => {
+                            if (res.status === 0){
+                                this.form = { visible: false }
+                                this.reload_call_records()
+                                this.$message({ message: '提交成功', type: 'success' })
+                            } else if (res.status === 1) {
+                                this.$message({ message: res.msg, type: 'error' })
+                            }
+                        }
+                    })
+                }).catch(err => {})
+            },
+            async submit_import() {
+                try {
+                    if (this.import_data.length === 0) {
+                        this.$message({ message: 'no import data', type: 'warning' })
+                        return
+                    }
+                    let params = { call_records: this.import_data }
+                    $.ajax({
+                        type: 'POST', url: '/call_records/v_create_batch', data: params,
+                        success: (res) => {
+                            if (res.status === 0){
+                                this.reload_call_records()
+                                this.import_dialog_visible = false
+                                this.import_data = []
+                                this.$refs.import_upload.clearFiles()
+                                this.$message({ message: '提交成功', type: 'success' })
+                            } else if (res.status === 1) {
+                                this.$message({ message: res.msg, type: 'error' })
+                            }
+                        }
+                    })
+                } catch (err) {
+                    this.$message({ message: err, type: 'error' })
+                }
+            },
+            debug() {
+                console.log('this.$data', this.$data)
+            }
+        }
+    })
+</script>
+<style lang="scss">
+    .cc-top-bar {
+        .el-button {
+            margin-left: 5px;
+        }
+    }
+    .el-card__header { padding: 9px 12px; }
+    .el-card__body { padding: 6px; }
+    .el-radio-group{
+        label { margin-bottom: 0; }
+    }
+    .cc-link {
+        font-size: 12px;
+    }
+    .cc-steps {
+        .el-step__icon {
+            color: #343a40;
+        }
+    }
+</style>

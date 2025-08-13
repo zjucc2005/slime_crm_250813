@@ -1,0 +1,25 @@
+<div class="d-inline-block">
+    <button type="button" class="btn btn-warning dropdown-toggle" data-toggle="dropdown">
+        <%= t('action.export_excel') %>
+    </button>
+    <div class="dropdown-menu">
+        <%= link_to '', :class => 'dropdown-item', :onclick => "exportFinanceExcel('cn');" do %>
+            中文模板
+        <% end %>
+        <%= link_to '', :class => 'dropdown-item', :onclick => "exportFinanceExcel('en');" do %>
+            英文模板
+        <% end %>
+        <%= link_to '', :class => 'dropdown-item', :onclick => "exportFinanceExcel('expert_fee')" do %>
+            专家费打款
+        <% end %>
+        <%= link_to '', :class => 'dropdown-item', :onclick => "exportFinanceExcel('bda')" do %>
+            BDA-专家访谈账单模板
+        <% end %>
+        <%= link_to '', :class => 'dropdown-item', :onclick => "exportFinanceExcel('iqvia_info')" do %>
+            IQVIA信息表
+        <% end %>
+        <%= link_to '', :class => 'dropdown-item', :onclick => "exportFinanceExcel('supplier_statement')" do %>
+             IQVIA对账单
+         <% end %>
+    </div>
+</div>

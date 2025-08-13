@@ -1,0 +1,46 @@
+<div id="app">
+    {{ text }}
+</div>
+
+<script>
+
+    var app = new Vue({
+        el: '#app',
+        data: {
+            text: ''
+        },
+        mounted: function () {
+            this.$nextTick(function(){
+                console.log('mounted')
+                if ( 'EventSource' in window) {
+                    let _this_ = this;
+                    const eventSource = new EventSource('/event_stream/test');
+                    eventSource.addEventListener('update', function(e){
+                        console.log('eventSource update:', e)
+                    });
+
+                    eventSource.onopen = function (event) {
+                        console.log('eventSource.onopen:', event.data)
+                    }
+                    eventSource.onmessage = function(event) {
+                        console.log('eventSource.onmessage:', event)
+                        _this_.text = event.data;
+                      //   const eventData = JSON.parse(event.data);
+                      //   console.log(eventData);
+                    };
+                    eventSource.onerror = function(event) {
+                        if (event.readyState == EventSource.CLOSED) {
+                            console.log("Connection closed"); // 连接已断开
+                        }
+                    };
+                }
+                
+            })
+        },
+        unmounted: function () {
+
+        },
+        methods: {
+        }
+    })
+</script>

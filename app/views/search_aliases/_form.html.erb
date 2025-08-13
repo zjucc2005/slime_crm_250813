@@ -1,0 +1,12 @@
+<%= model_error_tag(@search_alias) %>
+<div class="row">
+    <div class="col-12 form-group">
+        <%= f.label :name %><span class="text-red">*</span>
+        <%= f.text_field :name, :required => true, :class => 'form-control' %>
+    </div>
+
+    <div class="col-12 form-group">
+        <%= f.label :kwlist %><span class="text-red">*</span><span class="text-red">(关键词之间用半角 , 隔开)</span>
+        <%= f.text_field :kwlist, :value => @search_alias.kwlist.join(','), :required => true, :class => 'form-control' %>
+    </div>
+</div>

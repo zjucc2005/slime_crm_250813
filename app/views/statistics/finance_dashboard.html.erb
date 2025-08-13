@@ -1,0 +1,154 @@
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <%= fa_icon_tag('dashboard') %>
+            财务金额统计
+        </h5>
+        <%= link_to fa_icon_tag('close'), root_path, :class => 'card-header-close' %>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-lg-6 col-12">
+                <%= form_tag request.path, :method => :get do %>
+                    <div class="form-group">
+                        <div class="mb-3">
+                            <div class="form-check form-check-inline">
+                                <%= radio_button_tag :search_type, 'single_month', params[:search_type] != 'all_to_date', class: 'form-check-input' %>
+                                <%= label_tag :search_type_single_month, "按月份搜索", class: 'form-check-label' %>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <%= radio_button_tag :search_type, 'all_to_date', params[:search_type] == 'all_to_date', class: 'form-check-input' %>
+                                <%= label_tag :search_type_all_to_date, "截止当前全部", class: 'form-check-label' %>
+                            </div>
+                        </div>
+                        <div id="month_selector" style="<%= params[:search_type] == 'all_to_date' ? 'display: none;' : '' %>">
+                            <%= label_tag :month, "选择月份" %>
+                            <%= select_tag :month, options_for_select(@month_options, params[:month]), :class => 'form-control select2' %>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <%= label_tag :company, mt(:project, :company) %>
+                        <%= select_tag :company_id, options_for_select(company_options, params[:company_id]), :prompt => default_prompt, :class => 'form-control select2' %>
+                    </div>
+                    <div class="form-group">
+                        <%= label_tag :project_status, "项目状态" %>
+                        <%= select_tag :project_status, options_for_select([
+                            ['全部', ''],
+                            ['进行中', 'ongoing'],
+                            ['已开票', 'billing'],
+                            ['已收款', 'billed'],
+                            ['需结算', 'needs_settlement']
+                        ], params[:project_status]), :class => 'form-control select2' %>
+                    </div>
+                    <div class="form-group">
+                        <%= label_tag :payment_date_range, "预计收款时间" %>
+                        <div class="row">
+                            <div class="col-6">
+                                <%= date_field_tag :payment_date_start, params[:payment_date_start], :class => 'form-control', :placeholder => '开始日期' %>
+                            </div>
+                            <div class="col-6">
+                                <%= date_field_tag :payment_date_end, params[:payment_date_end], :class => 'form-control', :placeholder => '结束日期' %>
+                            </div>
+                        </div>
+                    </div>
+                    <% if current_user.su? %>
+                    <div class="form-group">
+                        <%= label_tag :user_channel, mt(:user_channel) %>
+                        <%= select_tag :user_channel_id, options_for_select(user_channel_options, params[:user_channel_id] || current_user.user_channel_id),
+                                       :prompt => default_prompt, :class => 'form-control select2' %>
+                    </div>
+                    <% end %>
+                    <div class="form-group">
+                        <%= submit_tag t('action.submit'), :class => 'btn btn-submit' %>
+                    </div>
+                <% end %>
+                <%= javascript_pack_tag 'finance_dashboard' %>
+            </div>
+
+            <div class="col-lg-6 col-12">
+                <div class="card shadow-none border h-100">
+                    <div class="card-header">
+                        <h6 class="mb-0">财务统计概览</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm card-text">
+                            <thead>
+                            <tr>
+                                <th class="pl-3">类别</th>
+                                <th>金额</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td class="pl-3" data-toggle="tooltip" title="尚未开具发票的项目费用总额">待开票（金额）</td>
+                                <td><%= number_to_currency(@unbilled_total, unit: '¥') %></td>
+                            </tr>
+                            <tr>
+                                <td class="pl-3" data-toggle="tooltip" title="已签合同但尚未收到付款的项目费用总额">应收款（金额）</td>
+                                <td><%= number_to_currency(@receivable_total, unit: '¥') %></td>
+                            </tr>
+                            <tr>
+                                <td class="pl-3" data-toggle="tooltip" title="已开具发票的项目费用总额">已开票（金额）</td>
+                                <td><%= number_to_currency(@billed_total, unit: '¥') %></td>
+                            </tr>
+                            <tr>
+                                <td class="pl-3" data-toggle="tooltip" title="已收到付款的项目费用总额">已收款（金额）</td>
+                                <td><%= number_to_currency(@received_total, unit: '¥') %></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>客户名称</th>
+                                <th>项目名称</th>
+                                <th>项目号</th>
+                                <th>总费用</th>
+                                <th>开票金额</th>
+                                <th>项目状态</th>
+                                <th>开票日期</th>
+                                <th>预计收款</th>
+                                <th>发票</th>
+                                <th>备注</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% @projects.each do |project| %>
+                                <tr>
+                                    <td><%= project.company.try(:name) %></td>
+                                    <td><%= project.name %></td>
+                                    <td><%= project.code %></td>
+                                    <td><%= number_to_currency(project.total_price, unit: '¥') %></td>
+                                    <td><%= number_to_currency(project.billed_amount, unit: '¥') %></td>
+                                    <td>
+                                        <% if project.needs_settlement? %>
+                                            <span class="badge" style="background-color: white; color: red; border: 1px solid red;">需结算</span>
+                                        <% else %>
+                                            <%= project_status_badge(project.status) %>
+                                        <% end %>
+                                    </td>
+                                    <td><%= project.billed_at&.strftime('%Y-%m-%d') %></td>
+                                    <td><%= project.invoice_payment_date&.strftime('%Y-%m-%d') %></td>
+                                    <td><%= link_to '下载', project.invoice_file.url, target: '_blank', download: project.invoice_file.filename if project.invoice_file.present? %></td>
+                                    <td><%= project.project_remarks.last&.remark %></td>
+                                    <td>
+                                        <%= link_to '编辑', edit_finance_project_path(project), class: 'btn btn-sm btn-primary' %>
+                                    </td>
+                                </tr>
+                            <% end %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

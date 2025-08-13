@@ -1,0 +1,93 @@
+<%= render partial: 'costs/widgets/nav', locals: { active: 2 } %>
+
+<div class="card">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-lg-3 col-12">
+                <%= form_tag request.path, :method => :get do %>
+                    <div class="form-group">
+                        <%= label_tag :year, t('dashboard.statistical_year') %>
+                        <%= select_tag :year, options_for_select(@year_options, params[:year]), :class => 'form-control select2' %>
+                    </div>
+                    <div class="form-group">
+                        <%= submit_tag t('action.submit'), class: 'btn btn-submit' %>
+                    </div>
+                <% end %>
+            </div>
+            <div class="col-lg-9 col-12">
+                <div id="bar_chart" style="height: 600px;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function(){
+        let bar_chart = echarts.init(document.getElementById('bar_chart'), 'default');
+        let res =  <%= @result.to_json.html_safe %>;
+        let data = res.map(item => {
+            if (item.stack) {
+                return {
+                    name: item.name,
+                    type: 'bar',
+                    stack: item.stack,
+                    barWidth: '50%',
+                    label: {
+                        show: true,
+                        position: 'inside',
+                        formatter: (e) => `${((e.data / res[0].data[e.dataIndex]) * 100 || 0).toFixed(1)} %`,
+                    },
+                    data: item.data
+                }
+            } else {
+                return {
+                    name: item.name,
+                    type: 'bar',
+                    barWidth: 2,
+                    label: {
+                        show: true,
+                        position: 'top'
+                    },
+                    data: item.data
+                }
+            }
+        })
+
+        let option = {
+            title: {
+                text: '<%= @year ? "#{@year}年" : '' %>成本结算',
+                subtext:  'Monthly Statistics - RMB'
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow'
+                }
+            },
+            legend: {
+                data: <%= @result.map{|item| item[:name]}.to_s.html_safe %>,
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis: [
+                {
+                    type: 'category',
+                    data: <%= @x_axis.to_s.html_safe %>
+                }
+            ],
+            yAxis: [
+                {
+                    type: 'value'
+                }
+            ],
+            series: data
+        };
+
+        bar_chart.setOption(option);
+    });
+</script>

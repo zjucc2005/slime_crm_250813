@@ -1,0 +1,151 @@
+<%= render partial: 'company_summaries/widgets/nav', locals: { active: 1 } %>
+
+<div class="card p-2 mb-2">
+    <div class="d-flex flex-row justify-content-between mb-2 pb-2 border-bottom">
+        <%= link_to v_summary_edit_company_summaries_path, class: 'btn btn-sm btn-primary' do %>
+            <%= t('action.new_model', model: mt(:company_summary)) %> <i class="fa fa-arrow-right"></i>
+        <% end %>
+    </div>
+
+    <div id="app">
+        <el-row :gutter="10" class="mb-2">
+            <el-col :lg="6" :md="12">
+                <label class="text-smaller">统计月份</label>
+                <el-date-picker
+                    v-model="search_form.datetime"
+                    @change="load_company_summaries"
+                    type="month"
+                    size="small"
+                    value-format="yyyy-MM-dd"
+                    placeholder="选择月份"
+                    style="width: 100%;"
+                />
+            </el-col>
+            <el-col :lg="6" :md="12">
+                <el-button @click="load_company_summaries" size="small" plain style="margin-top: 1.9rem;">
+                    <i class="el-icon-refresh-right"></i> 刷新
+                </el-button>
+            </el-col>
+        </el-row>
+
+        <el-row :gutter="10">
+            <el-col v-if="total_summary.name" :lg="6" :md="12" class="mb-2">
+                <el-card shadow="hover" :body-style="{ padding: '6px', background: 'linear-gradient(225deg, #f56c6c, #007bff)' }">
+                    <el-tree
+                        :data="[total_summary]"
+                        node-key="id"
+                        :props="{ label: 'name', children: 'infos' }"
+                        default-expand-all
+                        :expand-on-click-node="false">
+                        <span class="c-tree-node" slot-scope="{ node, data }">
+                            <span :class="data.company_id ? 'text-bold' : ''">{{ data.name }}</span>
+                            <span>
+                                <el-tag v-if="data.remark" size="small">{{ data.remark }}</el-tag>
+                                <span v-if="data.name === '毛利率'">{{ `${ data.price * 100} %` }}</span>
+                                <span v-else>{{ data.price }}</span>
+                            </span>
+                        </span>
+                    </el-tree>
+                </el-card>
+            </el-col>
+            <el-col v-for="(c, index) in company_summaries" :key="c.id" :lg="6" :md="12" class="mb-2">
+                <el-card shadow="hover" :body-style="{ padding: '6px' }">
+                    <el-tree
+                        :data="[c]"
+                        node-key="id"
+                        :props="{ label: 'name', children: 'infos' }"
+                        default-expand-all
+                        :expand-on-click-node="false">
+                        <span class="c-tree-node" slot-scope="{ node, data }">
+                            <span :class="data.company_id ? 'text-bold' : ''">{{ data.name }}</span>
+                            <span v-if="data.company_id">
+                                <el-link :href="`/company_summaries/v_summary_edit?company_summary_id=${data.id}`" type="primary">
+                                    <i class="el-icon-edit-outline"></i>
+                                </el-link>
+                            </span>
+                            <span v-else>
+                                <el-tag v-if="data.remark" size="small">{{ data.remark }}</el-tag>
+                                <span v-if="data.name === '毛利率'">{{ `${ (data.price * 100).toFixed() } %` }}</span>
+                                <span v-else>{{ data.price }}</span>
+                            </span>
+                        </span>
+                    </el-tree>
+                </el-card>
+            </el-col>
+        </el-row>
+    </div>
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            search_form: {
+                datetime: '<%= params[:datetime] || (Time.now.beginning_of_month - 1.month).strftime('%F') %>'
+            },
+            company_summaries: [],
+            total_summary: {}
+        },
+        mounted: function(){
+            this.$nextTick(function(){
+                this.load_company_summaries()
+            })
+        },
+        methods: {
+            load_company_summaries () {
+                let _this_ = this;
+                console.log('load company summaries req:', this.search_form.datetime)
+                $.get('/company_summaries/v_index', this.search_form, function (res) {
+                    _this_.company_summaries = res.data.company_summaries
+                    _this_.set_total_summary(res.data.company_summaries)
+                    console.log('load company summaries res:', res)
+                })
+            },
+            set_total_summary (data) {
+                if (data.length === 0) {
+                    this.total_summary = {}
+                    return
+                }
+                let interview_hours = 0
+                let sum_interview_in = 0
+                let sum_interview_ex = 0
+                data.map(item => {
+                    interview_hours += item.infos.find(e => e.name === '总访谈小时')?.price * 1
+                    sum_interview_in += item.infos.find(e => e.name === '总访谈收入')?.price * 1
+                    sum_interview_ex += item.infos.find(e => e.name === '总专家支出')?.price * 1
+                })
+                let aver_interview_in = interview_hours === 0 ? 0 : (sum_interview_in / interview_hours).toFixed(2)
+                let aver_interview_ex = interview_hours === 0 ? 0 : (sum_interview_ex / interview_hours).toFixed(2)
+                let profit_margin = (1 - sum_interview_ex / sum_interview_in).toFixed(2)
+                this.total_summary = {
+                    company_id: 'total',
+                    name: '当月汇总',
+                    name_abbr: '当月汇总',
+                    infos: [
+                        { name: '总访谈小时', price: interview_hours.toFixed(2), disabled: true },
+                        { name: '总访谈收入', price: sum_interview_in.toFixed(2), disabled: true },
+                        { name: '总专家支出', price: sum_interview_ex.toFixed(2), disabled: true },
+                        { name: '总访谈毛利', price: sum_interview_in - sum_interview_ex, disabled: true },
+                        { name: '访谈平均单价/h', price: aver_interview_in, disabled: true },
+                        { name: '专家平均单价/h', price: aver_interview_ex, disabled: true },
+                        { name: '毛利率', price: profit_margin, disabled: true }
+                    ]
+                }
+            }
+        }
+    })
+</script>
+
+<style>
+  .c-tree-node {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    padding-right: 8px;
+  }
+  .el-tree-node__content {
+    height: 30px;
+  }
+</style>

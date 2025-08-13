@@ -1,0 +1,17 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('font') %> <%= t('action.add_model', :model => mt(:search_alias)) %></h5>
+        <%= link_to fa_icon_tag('close'), search_aliases_path, :class => 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <%= form_for @search_alias do |f| %>
+            <%= render :partial => 'form', :locals => { :f => f } %>
+
+            <div class="form-group mb-0">
+                <%= f.submit t('action.submit'), :class => 'btn btn-submit' %>
+                <%= link_to t('action.back'), search_aliases_path, :class => 'btn btn-back' %>
+            </div>
+        <% end %>
+    </div>
+</div>

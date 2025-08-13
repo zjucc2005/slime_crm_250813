@@ -1,0 +1,28 @@
+<%= button_tag :type => 'button', :title => t(:batch_update_file), :class => 'btn btn-warning', :data => { :toggle => 'modal', :target => '#batchUpdateFileModal'}  do %>
+    <%= fa_icon_tag('upload') %>
+<% end if can?(:batch_update_file, Candidate) %>
+
+<div class="modal fade" id="batchUpdateFileModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"><%= t(:batch_update_file) %></h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+
+            <%= form_tag batch_update_file_candidates_path, :method => :post, :multipart => true do %>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>选择附件上传(可多选, Ctrl/Shift + 鼠标左键, 文件命名格式: 专家ID.扩展名, 例: 000001.pdf)</label>
+                        <%= file_field_tag :'file[]', :required => true, :multiple => true, :class => 'form-control-file' %>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal"><%= t('action.close') %></button>
+                    <%= submit_tag t('action.submit'), :class => 'btn btn-primary' %>
+                    </div>
+            <% end %>
+        </div>
+    </div>
+</div>

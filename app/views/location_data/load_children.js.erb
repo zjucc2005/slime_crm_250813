@@ -1,0 +1,4 @@
+$('select#ld_city_id').html('<%= @city_options.html_safe %>');
+<% if @ld_city_id.present? %>
+$('select#ld_city_id').val(<%= @ld_city_id %>).change();
+<% end %>

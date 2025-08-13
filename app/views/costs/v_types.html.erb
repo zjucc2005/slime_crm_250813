@@ -1,0 +1,264 @@
+<%= render partial: 'costs/widgets/nav', locals: { active: 3 } %>
+
+<div id="app" class="card">
+    <div class="card-body">
+        <el-row>
+            <el-col :span="6">
+                <div class="mb-3">
+                    <el-button type="primary" size="small" @click="addRootNode">
+                        <i class="fa fa-plus"></i> 新增根节点
+                    </el-button>
+                </div>
+                <el-tree
+                    :data="cost_types"
+                    node-key="id"
+                    :props="{ label: 'name' }"
+                    default-expand-all
+                    :expand-on-click-node="false">
+                    <span class="c-tree-node" slot-scope="{ node, data }">
+                        <template v-if="data.is_parent">
+                            <span class="text-bold">
+                                <span v-if="editingNode && editingNode.id === data.id">
+                                    <el-input v-model="editingNode.name" size="mini" @blur="updateNode" @keyup.enter.native="updateNode"></el-input>
+                                </span>
+                                <span v-else @dblclick="() => startEdit(data)">{{ node.label }}</span>
+                            </span>
+                            <span>
+                                <el-button v-if="data.is_parent"
+                                    type="text"
+                                    size="mini"
+                                    @click="() => append(data)">
+                                    新增下一级
+                                </el-button>
+                                <el-button
+                                    type="text"
+                                    size="mini"
+                                    @click="() => startEdit(data)">
+                                    编辑
+                                </el-button>
+                                <el-button
+                                    type="text"
+                                    size="mini"
+                                    @click="() => remove(node, data)">
+                                    删除
+                                </el-button>
+                            </span>
+                        </template>
+                        <template v-else>
+                            <span>
+                                <span v-if="editingNode && editingNode.id === data.id">
+                                    <el-input v-model="editingNode.name" size="mini" @blur="updateNode" @keyup.enter.native="updateNode"></el-input>
+                                </span>
+                                <span v-else @dblclick="() => startEdit(data)">{{ node.label }}</span>
+                            </span>
+                            <span>
+                                <el-button
+                                    type="text"
+                                    size="mini"
+                                    @click="() => startEdit(data)">
+                                    编辑
+                                </el-button>
+                                <el-button
+                                    type="text"
+                                    size="mini"
+                                    @click="() => remove(node, data)">
+                                    删除
+                                </el-button>
+                            </span>
+                        </template>
+                    </span>
+                </el-tree>
+            </el-col>
+        </el-row>
+    </div>
+    
+    <!-- 新增节点对话框 -->
+    <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="30%">
+        <el-form :model="newNode" label-width="80px">
+            <el-form-item label="名称">
+                <el-input v-model="newNode.name" autocomplete="off"></el-input>
+            </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="dialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="saveNode">确 定</el-button>
+        </span>
+    </el-dialog>
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            cost_types: [],
+            dialogVisible: false,
+            dialogTitle: '',
+            newNode: {
+                name: '',
+                parent_id: null,
+                is_parent: false
+            },
+            editingNode: null
+        },
+        mounted: function(){
+            this.$nextTick(function(){
+                var _this_ = this;
+                this.loadCostTypes();
+            })
+        },
+        methods: {
+            loadCostTypes() {
+                var _this_ = this;
+                // 加载类型数据
+                $.get('/costs/v_load_types', function(res){
+                    if (res.status === 0) {
+                        _this_.cost_types = res.data.cost_types;  // 加载类型数据
+                        console.log('load cost types:ok', res.data.cost_types)
+                    } else {
+                        _this_.$message({ message: res.msg, type: 'error' })
+                    }
+                })
+            },
+            // 递归查找节点，确保能找到所有节点，包括新增的节点
+            findNodeById(nodes, id) {
+                for (let i = 0; i < nodes.length; i++) {
+                    const node = nodes[i];
+                    if (node.id === id) {
+                        return node;
+                    }
+                    if (node.children && node.children.length > 0) {
+                        const found = this.findNodeById(node.children, id);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            },
+            addRootNode() {
+                this.dialogTitle = '新增根节点';
+                this.newNode = {
+                    name: '',
+                    parent_id: null,
+                    is_parent: true
+                };
+                this.dialogVisible = true;
+            },
+            append(data) {
+                this.dialogTitle = '新增子节点';
+                this.newNode = {
+                    name: '',
+                    parent_id: data.id,
+                    is_parent: false
+                };
+                this.dialogVisible = true;
+            },
+            saveNode() {
+                if (!this.newNode.name) {
+                    this.$message.error('请输入名称');
+                    return;
+                }
+                
+                var _this_ = this;
+                $.ajax({
+                    url: '/costs/create_cost_type',
+                    type: 'POST',
+                    data: this.newNode,
+                    success: function(res) {
+                        if (res.status === 0) {
+                            _this_.$message.success('保存成功');
+                            _this_.dialogVisible = false;
+                            _this_.loadCostTypes(); // 重新加载数据
+                        } else {
+                            _this_.$message.error(res.msg || '保存失败');
+                        }
+                    },
+                    error: function() {
+                        _this_.$message.error('网络错误，请稍后重试');
+                    }
+                });
+            },
+            startEdit(data) {
+                // 使用findNodeById确保能找到所有节点，包括新增的节点
+                const node = this.findNodeById(this.cost_types, data.id) || data;
+                this.editingNode = {
+                    id: node.id,
+                    name: node.name
+                };
+            },
+            updateNode() {
+                if (!this.editingNode) return;
+                
+                if (!this.editingNode.name) {
+                    this.$message.error('名称不能为空');
+                    return;
+                }
+                
+                // 确保编辑的节点存在于数据中
+                const nodeToUpdate = this.findNodeById(this.cost_types, this.editingNode.id) || this.editingNode;
+                
+                var _this_ = this;
+                $.ajax({
+                    url: '/costs/update_cost_type',
+                    type: 'POST',
+                    data: {
+                        id: nodeToUpdate.id,
+                        name: this.editingNode.name
+                    },
+                    success: function(res) {
+                        if (res.status === 0) {
+                            _this_.$message.success('更新成功');
+                            _this_.loadCostTypes(); // 重新加载数据
+                        } else {
+                            _this_.$message.error(res.msg || '更新失败');
+                        }
+                        _this_.editingNode = null;
+                    },
+                    error: function() {
+                        _this_.$message.error('网络错误，请稍后重试');
+                        _this_.editingNode = null;
+                    }
+                });
+            },
+            remove(node, data) {
+                var _this_ = this;
+                // 使用findNodeById确保能找到所有节点，包括新增的节点
+                const nodeToDelete = this.findNodeById(this.cost_types, data.id) || data;
+                
+                this.$confirm('确定要删除该成本类型吗?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    $.ajax({
+                        url: '/costs/delete_cost_type',
+                        type: 'POST',
+                        data: { id: nodeToDelete.id },
+                        success: function(res) {
+                            if (res.status === 0) {
+                                _this_.$message.success('删除成功');
+                                _this_.loadCostTypes(); // 重新加载数据
+                            } else {
+                                _this_.$message.error(res.msg || '删除失败');
+                            }
+                        },
+                        error: function() {
+                            _this_.$message.error('网络错误，请稍后重试');
+                        }
+                    });
+                }).catch(() => {
+                    // 取消删除操作
+                });
+            }
+        }
+    })
+</script>
+
+<style>
+  .c-tree-node {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    padding-right: 8px;
+  }
+</style>

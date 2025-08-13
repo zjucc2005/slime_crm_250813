@@ -1,0 +1,157 @@
+<div class="badge badge-danger mb-3 px-4"><%= t(:charge_info) %></div>
+<div class="row">
+    <!-- line 1 -->
+    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><%= mt(:project_task, :charge_duration) %></span>
+        </div>
+        <%= content_tag :span, "#{@project_task.charge_duration} #{t(:minute)}", :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><%= mt(:project_task, :charge_rate) %></span>
+        </div>
+        <%= content_tag :span, @project_task.charge_rate, :class => 'form-control' %>
+        <di class="input-group-append">
+            <span class="input-group-text"><%= currency_display(@project_task.currency) %></span>
+        </di>
+    </div>
+    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><%= '实际费率' %></span>
+        </div>
+        <span class="form-control">
+            <%= @project_task.charge_rate_mod %>
+            <% if @project_task.expert_rate > 1 %>
+                <span class="text-danger text-smaller">
+                    <%= "#{((@project_task.expert_rate - 1) * 100).round(1)}%" %> <i class="fa fa-caret-up"></i>
+                </span>
+            <% elsif @project_task.expert_rate < 1 %>
+                <span class="text-success text-smaller">
+                    <%= "#{((1 - @project_task.expert_rate) * 100).round(1)}%" %> <i class="fa fa-caret-down"></i>
+                </span>
+            <% end %>
+        </span>
+    </div>
+<!--     <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><%= mt(:project_task, :currency) %></span>
+        </div>
+        <%= content_tag :span, currency_display(@project_task.currency), :class => 'form-control' %>
+    </div> -->
+    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><%= mt(:project_task, :expert_rate) %></span>
+        </div>
+        <%= content_tag :span, @project_task.expert_rate.round(3), :class => 'form-control' %>
+    </div>
+    <!-- line 2 -->
+    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><%= mt(:project_task, :base_price) %></span>
+        </div>
+        <%= content_tag :span, @project_task.base_price, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><%= mt(:project_task, :is_shorthand) %></span>
+        </div>
+        <%= content_tag :span, boolean_display(@project_task.is_shorthand), :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><%= mt(:project_task, :is_taxed) %></span>
+        </div>
+        <%= content_tag :span, boolean_display(@project_task.is_taxed), :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><%= mt(:project_task, :is_recorded) %></span>
+        </div>
+        <%= content_tag :span, boolean_display(@project_task.is_recorded), :class => 'form-control' %>
+    </div>
+    <!-- line 3 -->
+    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><%= mt(:project_task, :actual_price) %></span>
+        </div>
+        <%= content_tag :span, @project_task.actual_price, :class => 'form-control text-bold' %>
+    </div>
+    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+          <span class="input-group-text"><%= mt(:project_task, :shorthand_price) %></span>
+        </div>
+        <%= content_tag :span, @project_task.shorthand_price, :class => 'form-control text-bold' %>
+    </div>
+    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+          <span class="input-group-text"><%= mt(:project_task, :recruitment_fee) %></span>
+        </div>
+        <%= content_tag :span, @project_task.recruitment_fee || 0, :class => 'form-control text-bold' %>
+    </div>
+    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><%= mt(:project_task, :tax) %></span>
+        </div>
+        <%= content_tag :span, @project_task.tax, :class => 'form-control text-bold' %>
+    </div>
+    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><%= mt(:project_task, :total_price) %></span>
+        </div>
+        <%= content_tag :span, @project_task.total_price, :class => 'form-control text-bold' %>
+    </div>
+</div>
+<div class="row border-bottom mb-3">
+    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><%= mt(:project_task, :charge_status) %></span>
+        </div>
+        <%= content_tag :span, project_task_charge_status_badge(@project_task.charge_status), :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><%= mt(:project_task, :charge_days) %></span>
+        </div>
+        <%= content_tag :span, @project_task.charge_days, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><%= mt(:project_task, :billed_at) %></span>
+        </div>
+        <%= content_tag :span, @project_task.billed_at.try(:strftime, '%F'), :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><%= mt(:project_task, :charged_at) %></span>
+        </div>
+        <%= content_tag :span, @project_task.charged_at.try(:strftime, '%F'), :class => 'form-control' %>
+    </div>
+    <div class="col-12 input-group input-group-sm input-group-align">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><%= mt(:project_task, :memo) %></span>
+        </div>
+        <%= content_tag :span, @project_task.memo, :class => 'form-control' %>
+    </div>
+    <div id="jiesuan_file" class="col-12" v-if="srcList.length">
+        <div class="text-smaller"><%= mt(:project_task, :jiesuan_file) %></div>
+        <el-image
+            v-for="(url, index) in srcList"
+            :key="index"
+            :initial-index="index"
+            class="img-thumbnail"
+            style="width: 100px; height: 100px; margin-right: 0.5rem;"
+            :src="url"
+            :preview-src-list="srcList">
+        </el-image>
+    </div>
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#jiesuan_file',
+        data: {
+            srcList: <%= @project_task.jiesuan_files.map(&:url).to_json.html_safe %>
+        }
+    })
+</script>

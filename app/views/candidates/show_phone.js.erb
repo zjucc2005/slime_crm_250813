@@ -1,0 +1,5 @@
+<% if @response[:status] == 'succ' %>
+$('#show_phone_wrapper_' + <%= @candidate.id %>).html('<%= @candidate.phone.present? ? @candidate.phone : @candidate.phone1 %>');
+<% else %>
+alert('<%= @response[:reason] %>');
+<% end %>

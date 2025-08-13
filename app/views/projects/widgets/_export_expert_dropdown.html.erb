@@ -1,0 +1,8 @@
+<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+    <i class="fa fa-file-excel-o"></i> <%= t('action.export_excel') %>
+</button>
+<div class="dropdown-menu">
+    <%= link_to '初始模板', 'javascript:void(0);', class: 'dropdown-item', onclick: "expertTemplate(#{project_id}, 'expert');" %>
+    <%= link_to '医药信息模板', 'javascript:void(0);', class: 'dropdown-item', onclick: "expertTemplate(#{project_id}, 'doctor');" %>
+    <%= link_to '分类模板', 'javascript:void(0);', class: 'dropdown-item', onclick: "expertTemplate(#{project_id}, 'classify');" %>
+</div>

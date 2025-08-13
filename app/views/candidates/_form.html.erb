@@ -1,0 +1,232 @@
+<%
+# Log form rendering debug info
+Rails.logger.info "==== Rendering candidates/_form.html.erb for candidate ID: #{@candidate.id} ===="
+Rails.logger.info "Candidate attributes: #{@candidate.attributes.inspect}"
+Rails.logger.info "Medical insurance info count: #{@candidate.medical_insurance_infos.count}"
+if @candidate.medical_insurance_infos.any?
+  Rails.logger.info "Medical insurance info details:"
+  @candidate.medical_insurance_infos.each do |mi|
+    Rails.logger.info "  ID: #{mi.id}, Year: #{mi.year}, Clinical: #{mi.is_clinical}, Type: #{mi.non_clinical_type}, Subtype: #{mi.sub_type}"
+  end
+else
+  Rails.logger.info "No medical insurance info records"
+end
+
+begin
+  Rails.logger.info "Constants check:"
+  Rails.logger.info "  MedicalInsuranceInfo::NON_CLINICAL_TYPES defined: #{defined?(MedicalInsuranceInfo::NON_CLINICAL_TYPES) != nil}"
+  Rails.logger.info "  MedicalInsuranceInfo::COMPREHENSIVE_SUB_TYPES defined: #{defined?(MedicalInsuranceInfo::COMPREHENSIVE_SUB_TYPES) != nil}"
+  Rails.logger.info "  MedicalInsuranceInfo::CALCULATION_SUB_TYPES defined: #{defined?(MedicalInsuranceInfo::CALCULATION_SUB_TYPES) != nil}"
+rescue => e
+  Rails.logger.error "Error checking constants: #{e.message}"
+end
+%>
+<%= model_error_tag(@candidate) %>
+<div class="badge badge-info mb-3 px-4"><%= t(:base_info) %></div>
+<div class="row border-bottom mb-3">
+
+    <div class="col-12 form-group">
+        <span class="badge badge-primary"><%= show_candidate_category %></span>
+        <span class="badge badge-warning"><%= show_candidate_data_source %></span>
+        <span class="badge badge-light"><%= show_creator(@candidate) %></span>
+        <span class="badge badge-light"><%= show_timestamps(@candidate) %></span>
+    </div>
+
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :last_name, mt(:candidate, :name) %><span class="text-red">*</span>
+        <div class="form-group-range">
+            <div class="form-group-range-input">
+                <%= f.text_field :last_name, :required => true, :class => 'form-control', :placeholder => "#{mt(:candidate, :last_name)}*" %>
+            </div>
+            <div class="form-group-range-input">
+                <%= f.text_field :first_name, :class => 'form-control', :placeholder => mt(:candidate, :first_name) %>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :nickname %>
+        <%= f.text_field :nickname, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :gender %>
+        <%= f.select :gender, Candidate::GENDER.to_a.map(&:reverse), { :include_blank => false }, :class => 'form-control select2-gender-with-icon' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :date_of_birth %>
+        <%= f.text_field :date_of_birth, :value => @candidate.date_of_birth.try(:strftime, '%F') ,:class => 'form-control datepicker', :placeholder => 'yyyy-mm-dd' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :phone %><span class="text-red">*</span>
+        <div class="input-group">
+            <%= f.text_field :phone, :required => true, :class => 'form-control' %>
+            <div class="input-group-append">
+                <span class="input-group-text d-flex fa fa-search" onclick="showPhoneLocation('candidate_phone');"></span>
+            </div>
+        </div>
+        <%= content_tag :span, nil, :id => 'candidate_phone_location', :class => 'phone-location' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :phone1 %>
+        <div class="input-group">
+            <%= f.text_field :phone1, :class => 'form-control' %>
+            <div class="input-group-append">
+                <span class="input-group-text d-flex fa fa-search" onclick="showPhoneLocation('candidate_phone1');"></span>
+            </div>
+        </div>
+        <%= content_tag :span, nil, :id => 'candidate_phone1_location', :class => 'phone-location' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :city %><span class="text-red">*</span>
+        <%= f.text_field :city, :required => true, :class => 'form-control autocomplete-city' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :industry %><span class="text-red">*</span>
+        <%= f.select :industry, industry_options, { :include_blank => default_prompt }, :required => true, :class => 'form-control select2' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :email %><span class="text-red">*</span>
+        <%= f.email_field :email, :required => true, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :email1 %>
+        <%= f.email_field :email1, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :wechat %>
+        <%= f.text_field :wechat, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :recommender_id %>
+        <div class="input-group">
+            <%= f.text_field :recommender_id, :class => 'form-control', :onchange => 'showRecommenderName();' %>
+            <div class="input-group-append">
+                <span class="input-group-text" id="recommender_name"></span>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :data_channel %>
+        <%= f.select :data_channel, candidate_data_channel_options, { :include_blank => default_prompt },
+                     :class => 'form-control select2', :onchange => 'requireRecommenderId();' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :haodf_id %>
+        <%= f.text_field :haodf_id, class: 'form-control' %>
+    </div>
+
+    <div class="col-12 form-group">
+        <%= f.label :file %>
+        <%= link_to @candidate.file.url, target: '_blank' do %><%= fa_icon_tag('download') %> <%= t(:file) %><% end if @candidate.file.present? %>
+        <%= f.file_field :file, :class => 'form-control-file' %>
+    </div>
+    <div class="col-12 form-group">
+        <%= f.label :sign_file %>
+        <%= link_to @candidate.sign_file.url, target: '_blank' do %><%= fa_icon_tag('download') %> <%= t(:file) %><% end if @candidate.sign_file.present? %>
+        <%= f.file_field :sign_file, class: 'form-control-file', accept: 'image/jpeg,image/png' %>
+    </div>
+</div>
+
+<div class="row border-bottom mb-3">
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :is_available %><span class="text-red">*</span>
+        <%= f.select :is_available, candidate_is_available_options, { include_blank: false }, class: 'form-control select2-boolean-with-icon' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :cpt %><span class="text-red">*</span>
+        <%= f.number_field :cpt, :required => true, :min => 0, :step => 1, :value => @candidate.cpt || 0, :class => 'form-control' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :cpt_taxed %><span class="text-red">*</span>
+        <%= f.select :cpt_taxed, boolean_options, { include_blank: false }, class: 'form-control select2-boolean-with-icon' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :currency %><span class="text-red">*</span>
+        <%= f.select :currency, currency_options, { :include_blank => false }, :class => 'form-control select2' %>
+    </div>
+    <div class="col-lg-3 col-6 form-group">
+        <%= f.label :cpt_face_to_face %>
+        <%= f.number_field :cpt_face_to_face, :min => 0, :step => 1, :class => 'form-control' %>
+    </div>
+    <div class="col-12 form-group">
+        <%= f.label :description %>
+        <%= f.text_area :description, :class => 'form-control', :rows => 4 %>
+    </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-3 col-6 form-group">
+    <%= f.label :is_yibao, '是否加入医保' %>
+    <%= f.select :is_yibao, boolean_options, { include_blank: false }, 
+                class: 'form-control select2-boolean-with-icon', 
+                onchange: 'toggleMedicalInsuranceFields()' %>
+  </div>
+  
+  <div id="medical_insurance_fields" style="display: none;" class="col-12">
+    <div class="badge badge-info mb-3 px-4">医保信息</div>
+    <div id="medical_insurance_records">
+      <% if f.object.medical_insurance_infos.present? %>
+        <%= f.fields_for :medical_insurance_infos do |mi_form| %>
+          <%= render 'medical_insurance_fields', f: mi_form %>
+        <% end %>
+      <% end %>
+    </div>
+    <div class="links mb-3">
+      <%= link_to_add_association '添加医保年份记录', f, :medical_insurance_infos, 
+                                  partial: 'medical_insurance_fields', 
+                                  class: 'btn btn-sm btn-outline-primary' %>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleMedicalInsuranceFields() {
+    // 尝试通过多种方式获取is_yibao的值
+    var isYibao = false;
+    var isYibaoSelect = $('select[name="candidate[is_yibao]"]');
+    if (isYibaoSelect.length > 0) {
+      isYibao = isYibaoSelect.val();
+    } else {
+      // 尝试通过select2的方式获取
+      var select2Container = $('.select2-boolean-with-icon');
+      if (select2Container.length > 0) {
+        isYibao = select2Container.val();
+      }
+    }
+    
+    var fields = document.getElementById('medical_insurance_fields');
+    if (fields) {
+      fields.style.display = (isYibao === 'true') ? 'block' : 'none';
+    }
+  }
+  
+  $(document).ready(function() {
+    try {
+      toggleMedicalInsuranceFields();
+      
+      // 为select2添加change事件监听
+      $('select[name="candidate[is_yibao]"]').on('change', function() {
+        toggleMedicalInsuranceFields();
+      });
+      
+      // 如果使用了select2，也为select2添加事件监听
+      $('.select2-boolean-with-icon').on('select2:select', function() {
+        toggleMedicalInsuranceFields();
+      });
+    } catch (e) {
+      console.error("Error in medical insurance fields setup:", e);
+    }
+  });
+</script>
+
+<script>
+    $('.autocomplete-city').autocomplete({ source: '/location_data/autocomplete_city.json', delay: 500 });
+    $(function(){
+        $('#candidate_recommender_id').change();
+        $('#candidate_data_channel').change();
+    });
+    function requireRecommenderId(){
+        var data_channel = document.getElementById('candidate_data_channel');
+        var recommender_id = document.getElementById('candidate_recommender_id');
+        recommender_id.required = (data_channel.value === 'recommend');
+    }
+</script>

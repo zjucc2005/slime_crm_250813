@@ -1,0 +1,7 @@
+<% if @date.present? %>
+$("#date_<%= @date %>>.tab-body").html('<%= j(render partial: 'xibao_list') %>');
+$("#date_<%= @date %>>.tab-body [data-toggle='popover']").popover();
+<% else %>
+$("#date_sum>.tab-body").html('<%= j(render partial: 'xibao_list') %>');
+$("#date_sum>.tab-body [data-toggle='popover']").popover();
+<% end %>

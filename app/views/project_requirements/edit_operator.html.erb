@@ -1,0 +1,24 @@
+<div class="card">
+    <div class="card-header">
+        <h5><%= fa_icon_tag('exchange') %> <%= t(:change_operator) %></h5>
+        <%= link_to fa_icon_tag('close'), return_to(project_requirements_path), :class => 'card-header-close' %>
+    </div>
+
+    <div class="card-body">
+        <%= form_for @project_requirement, :url => update_operator_project_requirement_path(@project_requirement), :method => :put do |f| %>
+            <%= model_error_tag(@project_requirement) %>
+            <div class="row">
+                <div class="col-6 form-group">
+                    <%= f.label :operator %>
+                    <%= f.select :operator_id, @project_requirement.project.users.map{|user| [user.uid_name, user.id]},
+                                 { :include_blank => false }, :class => 'form-control select2' %>
+                </div>
+            </div>
+
+            <div class="form-group mb-0">
+                <%= f.submit t('action.submit'), :class => 'btn btn-submit' %>
+                <%= link_to t('action.back'), return_to(project_requirements_path), :class => 'btn btn-back' %>
+            </div>
+        <% end %>
+    </div>
+</div>

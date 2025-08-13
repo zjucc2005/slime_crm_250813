@@ -1,0 +1,1181 @@
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<div id="app">
+    <!-- 进展中的项目需求 -->
+    <div class="mb-2">
+        <el-radio-group v-model="search_form.ordering" @input="load_project_requirement_index" size="mini">
+            <el-radio-button label="desc"><i class="el-icon-d-arrow-right"></i> 时间倒序</el-radio-button>
+            <el-radio-button label="asc"><i class="el-icon-d-arrow-left"></i> 时间顺序</el-radio-button>
+        </el-radio-group>
+
+        <el-input v-model="search_form._v" placeholder="请输入内容" size="mini" style="width: 640px;" clearable class="input-with-select">
+            <el-select v-model="search_form._k" slot="prepend" placeholder="请选择" style="width: 160px;">
+                <el-option value="name" label="项目名称"></el-option>
+                <el-option value="code" label="项目编码"></el-option>
+                <el-option value="company_name_abbr" label="公司简称"></el-option>
+            </el-select>
+        </el-input>
+        <el-button @click="handleSearch" type="primary" size="mini" icon="el-icon-search">搜索</el-button>
+        <el-button @click="handleSearchReset" size="mini" icon="el-icon-refresh" title="重置">重置</el-button>
+    </div>
+
+    <el-tabs v-model="activeTab" @tab-click="load_project_requirement" ref="dragTabs">
+        <el-tab-pane 
+            v-for="req in project_requirement_index"
+            :key="req.id" 
+            :label="req.title"
+            :name="`req_${req.id}`">
+            <div slot="label">
+                <div class="text-bold text-primary">{{ req.company_name_abbr }}</div>
+                <div class="text-smaller">{{ req.project_name }}</div>
+                <div class="text-smaller text-gray"><i v-if="req.priority" class="el-icon-warning" style="color: #f56c6c;"></i> {{ req.title | truncate(15) }}</div>
+            </div>
+
+            <el-card v-if="project_requirement.id == req.id" class="box-card mb-1">
+                <div slot="header" class="card-header-cc">
+                    <el-link :href="`/projects/${project_requirement.project_id}`" target="_blank" type="primary">{{ project_requirement.project_name }}</el-link>
+                    <div>
+                        <el-button @click="handleCallNew(project_requirement.id);" type="primary" size="mini" icon="el-icon-plus">
+                            新增通话记录
+                        </el-button>
+                        <el-button @click="handleCallBatchNew(project_requirement.id)" size="mini" icon="el-icon-copy-document">
+                            批量新增
+                        </el-button>
+                        <el-popconfirm
+                            v-if="project_requirement.call_records.length"
+                            @confirm="handleCallExport"
+                            confirm-button-text="确认"
+                            confirm-button-type="primary"
+                            cancel-button-text="取消"
+                            icon="el-icon-info"
+                            icon-color="red"
+                            title="确认导出通话记录吗"
+                            style="margin-left: 8px;"
+                        >
+                            <el-button slot="reference" type="warning" size="mini" icon="el-icon-download">
+                                导出通话记录
+                            </el-button>
+                        </el-popconfirm>
+                    </div>
+                </div>
+                <!-- 项目需求table -->
+                <el-table :data="[project_requirement]" size="mini" border class="mb-1">
+                    <el-table-column prop="company_name_abbr" label="公司简称"></el-table-column>
+                    <el-table-column prop="project_name" label="项目名称" min-width="120"></el-table-column>
+                    <el-table-column prop="project_code" label="项目编码"></el-table-column>
+                    <el-table-column prop="client_contact" label="客户联系人"></el-table-column>
+                    <el-table-column prop="pm_name" label="PM"></el-table-column>
+                    <el-table-column prop="category" label="需求类型"></el-table-column>
+                    <el-table-column prop="demand_number" label="需求人数/推荐/已约">
+                        <template slot-scope="scope">
+                            <template v-if="isAdmin && editingDemandNumber === scope.row.id">
+                                <el-input-number 
+                                    v-model="tempDemandNumber" 
+                                    :min="1" 
+                                    size="mini" 
+                                    style="width: 120px;"
+                                    @blur="saveDemandNumber(scope.row)"
+                                    @keyup.enter.native="saveDemandNumber(scope.row)"
+                                ></el-input-number>
+                                <el-button @click="cancelEditDemandNumber" size="mini" type="text" icon="el-icon-close"></el-button>
+                            </template>
+                            <template v-else>
+                                <span @click="startEditDemandNumber(scope.row)" :style="isAdmin ? 'cursor: pointer; color: #409EFF;' : ''">
+                                    {{ scope.row.demand_number || '-' }}
+                                </span>
+                                <el-button v-if="isAdmin" @click="startEditDemandNumber(scope.row)" size="mini" type="text" icon="el-icon-edit" style="margin-left: 5px;"></el-button>
+                            </template>
+                            /
+                            {{ scope.row.call_records.filter(c => c.rec_status !== 'init').length }} /
+                            {{ scope.row.call_records.filter(c => c.rec_status === 'succ').length }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="created_at" label="创建时间" width="90">
+                        <template slot-scope="scope">
+                            <el-tooltip :content="scope.row.created_at.split(' ')[1]" placement="right">
+                                <el-button size="mini" type="text">{{ scope.row.created_at.split(' ')[0] }}</el-button>
+                            </el-tooltip>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="operator" label="操作员"></el-table-column>
+                    <el-table-column prop="status" label="需求状态">
+                        <template slot-scope="scope">
+                            <el-tag :type="{ 'ongoing': 'success', 'finished': 'info', 'unfinished': 'danger'}[scope.row.status]" size="mini">
+                                {{ req_status_dict[scope.row.status] }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="priority" label="紧急程度">
+                        <template slot-scope="scope">
+                            <el-tag v-if="scope.row.priority" effect="dark" type="danger" size="mini">紧急</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="title" label="需求内容" min-width="120">
+                        <template slot-scope="scope">
+                            <el-link @click="show_drawer(scope.row)" type="primary">
+                                {{ scope.row.title | truncate(20) }}
+                            </el-link>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                <!-- 通话记录table -->
+                <el-row :gutter="10">
+                    <el-col :span="22" :offset="2">
+                        <el-tag effect="plain" size="mini" class="mb-1"><i class="el-icon-phone"></i> 通话记录 {{ project_requirement.call_records.length }}</el-tag>
+                        <el-table :data="project_requirement.call_records" size="mini" border stripe class="fixed-scroll-table">
+                            <el-table-column prop="category" label="类型" width="72">
+                                <template slot-scope="scope">
+                                    <span v-if="scope.row.category === 'doctor'" ><i class="fa fa-user-circle text-danger"></i> 医生</span>
+                                    <span v-else><i class="fa fa-user-circle text-primary"></i> 专家</span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="name" label="姓名" width="140">
+                                <template slot-scope="scope">
+                                    <template v-if="scope.row.candidate_id">
+                                        <el-tag size="mini" plain>已入库</el-tag>
+                                        <el-link :href="`/${scope.row.category === 'doctor' ? 'doctors' : 'candidates'}/${scope.row.candidate_id}`" target="_blank">{{ scope.row.name }}</el-link>
+                                    </template>
+                                    <template v-else>{{ scope.row.name }}</template>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="company" label="公司/医院" width="140"></el-table-column>
+                            <el-table-column prop="department" label="部门/科室" width="140"></el-table-column>
+                            <el-table-column prop="title" label="职位" width="140"></el-table-column>
+                            <el-table-column prop="memo" label="沟通记录" width="300">
+                                <template slot-scope="scope">
+                                    <div v-for="(m, index) in scope.row.memo_logs">{{ m[1] }}</div>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="phone" label="电话" width="140"></el-table-column>
+                            <el-table-column prop="status" label="通话状态" width="100">
+                                <template slot-scope="scope">
+                                    <el-dropdown trigger="click">
+                                        <span>
+                                            <el-tag :type="call_status_tag_type[scope.row.status]" size="mini">{{ call_status_dict[scope.row.status] }}</el-tag>
+                                            <i class="el-icon-arrow-down el-icon--right"></i>
+                                        </span>
+                                        <el-dropdown-menu slot="dropdown">
+                                            <el-dropdown-item v-for="(val, key) in call_status_dict" :key="key">
+                                                <el-tag @click="update_call_status(key, scope.row)" :type="call_status_tag_type[key]" size="mini">
+                                                    {{ call_status_dict[key] }}
+                                                </el-tag>
+                                            </el-dropdown-item>
+                                        </el-dropdown-menu>
+                                    </el-dropdown>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="rec_status" label="推荐状态" width="90">
+                                <template slot-scope="scope">
+                                    <el-tag :type="call_rec_status_tag_type[scope.row.rec_status]" size="mini">{{ call_rec_status_dict[scope.row.rec_status] }}</el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="operator" label="操作员" width="90"></el-table-column>
+                            <el-table-column prop="created_at" label="创建时间" width="90">
+                                <template slot-scope="scope">
+                                    <el-tooltip :content="scope.row.created_at.split(' ')[1]" placement="right">
+                                        <el-button size="mini" type="text">{{ scope.row.created_at.split(' ')[0] }}</el-button>
+                                    </el-tooltip>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="last_logged_at" label="最近沟通时间" width="110">
+                                <template slot-scope="scope">
+                                    <el-tooltip :content="scope.row.last_logged_at.split(' ')[1]" placement="right">
+                                        <el-button size="mini" type="text">{{ scope.row.last_logged_at.split(' ')[0] }}</el-button>
+                                    </el-tooltip>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="操作" width="210">
+                                <template slot-scope="scope">
+                                    <el-button type="primary" size="mini" icon="el-icon-edit" circle title="编辑" @click="handleCallEdit(scope.row)"></el-button>
+                                    <el-button v-if="!scope.row.candidate_id" @click="handleRuku(scope.row)" type="primary" size="mini">入库</el-button>
+                                    <el-button v-if="scope.row.candidate_id && scope.row.rec_status === 'init'" @click="handleTuijian(scope.row)" type="primary" size="mini">推荐</el-button>
+                                    <el-button v-if="scope.row.rec_status === 'ok'" @click="handleInterview(scope.row)" type="success" size="mini">约访</el-button>
+                                    <el-popconfirm
+                                        v-if="scope.row.rec_status === 'ok' && scope.row.project_task_id"
+                                        @confirm="handleInterviewRes(scope.row, 'succ')"
+                                        @cancel="handleInterviewRes(scope.row, 'fail')"
+                                        confirm-button-text="成功"
+                                        confirm-button-type="success"
+                                        cancel-button-text="失败"
+                                        cancel-button-type="danger"
+                                        icon="el-icon-info"
+                                        icon-color="red"
+                                        title="选择约访结果"
+                                    >
+                                      <el-button slot="reference" size="mini">约访结果</el-button>
+                                    </el-popconfirm>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-col>
+                </el-row>
+            </el-card>
+        </el-tab-pane>
+    </el-tabs>
+
+    <!-- 需求内容详情 -->
+    <el-drawer :title="drawer.title" :visible.sync="drawer.visible" direction="rtl" size="40%">
+        <div class="drawer-content">{{ drawer.content }}</div>
+        <div class="drawer-files">
+            <div v-for="(url, index) in drawer.files" :key="index">
+                {{ `附件${index + 1}:` }} <el-link :href="url" type="primary" target="_blank">{{ url | url_basename }}</el-link>
+            </div>
+        </div>
+    </el-drawer>
+
+    <!-- 新增/修改通话记录form -->
+    <el-dialog :title="`${ callForm.id ? '编辑' : '新增' }通话记录`" :visible.sync="callFormVisible" :close-on-click-modal="false">
+        <el-form ref="callForm" :model="callForm" size="small" label-width="80px">
+            <el-form-item label="类型" :rules="callFormRules.category">
+                <el-radio-group v-model="callForm.category">
+                    <el-radio label="expert">专家</el-radio>
+                    <el-radio label="doctor">医生</el-radio>
+                </el-radio-group>
+            </el-form-item>
+            <el-form-item label="姓名" prop="name" :rules="callFormRules.name">
+                <el-input v-model="callForm.name" clearable></el-input>
+            </el-form-item>
+            <el-form-item label="电话" prop="phone">
+                <el-input v-model="callForm.phone" clearable></el-input>
+            </el-form-item>
+            <el-form-item :label="callForm.category === 'expert' ? '公司' : '医院'" prop="company">
+                <el-input v-model="callForm.company" clearable></el-input>
+            </el-form-item>
+            <el-form-item :label="callForm.category === 'expert' ? '部门' : '科室'" prop="department">
+                <el-input v-model="callForm.department" clearable></el-input>
+            </el-form-item>
+            <el-form-item label="职位" prop="title">
+                <el-input v-model="callForm.title" clearable></el-input>
+            </el-form-item>
+            <el-timeline style="margin-left: 10px;">
+                <el-timeline-item v-for="(item, index) in callForm.memo_logs" :key="index" :timestamp="item[0]">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>{{ item[1] }}</span>
+                        <el-button type="danger" size="mini" icon="el-icon-delete" circle title="删除" @click="deleteMemoLog(index)"></el-button>
+                    </div>
+                </el-timeline-item>
+            </el-timeline>
+            <el-form-item label="沟通记录" prop="memo">
+                <el-input v-model="callForm.memo" clearable></el-input>
+            </el-form-item>
+            <el-form-item label="通话状态" prop="status" :rules="callFormRules.status">
+                <el-select v-model="callForm.status" placeholder="Please select">
+                    <el-option v-for="(val, key) in call_status_dict" :key="key" :label="val" :value="key">
+                        <el-tag :type="call_status_tag_type[key]" size="mini">{{ val }}</el-tag>
+                    </el-option>
+                </el-select>
+            </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+            <el-button size="mini" @click="callFormVisible = false">取消</el-button>
+            <el-button type="primary" size="mini" @click="handleCallSubmit">确定</el-button>
+        </span>
+    </el-dialog>
+
+    <!-- 批量新增通话记录form -->
+    <el-dialog title="批量新增通话记录" :visible.sync="callBatchFormVisible" :close-on-click-modal="false">
+        <template v-if="callBatchStep == 1">
+            <el-input v-model="callBatchForm.raw" type="textarea" :rows="10" placeholder="请粘贴从Excel中复制的内容"></el-input>
+        </template>
+        <template v-if="callBatchStep == 2">
+            <el-radio-group v-model="callBatchForm.category">
+                <el-radio label="expert">专家</el-radio>
+                <el-radio label="doctor">医生</el-radio>
+            </el-radio-group>
+            <el-table :data="callBatchForm.call_records" size="mini" border stripe>
+                <el-table-column prop="name" label="姓名"></el-table-column>
+                <el-table-column prop="phone" label="电话"></el-table-column>
+                <el-table-column prop="company" label="公司/医院"></el-table-column>
+                <el-table-column prop="department" label="部门/科室"></el-table-column>
+                <el-table-column prop="title" label="职位"></el-table-column>
+                <el-table-column prop="memo" label="沟通记录" width="300"></el-table-column>
+            </el-table>
+        </template>
+        <span slot="footer" class="dialog-footer">
+            <el-button v-if="callBatchStep == 1 && callBatchForm.raw" @click="handleCallBatchPreview" type="primary" size="mini">预览</el-button>
+            <el-button v-if="callBatchStep == 2" @click="handleCallBatchReset" size="mini">重置</el-button>
+            <el-button v-if="callBatchStep == 2 && callBatchForm.call_records.length" @click="handleCallBatchSubmit" type="primary" size="mini">确定</el-button>
+        </span>
+    </el-dialog>
+
+    <!-- 入库form -->
+    <el-dialog title="入库" :visible.sync="rukuFormVisible" :close-on-click-modal="false" width="80%">
+        <el-row>
+            <el-col :span="12">
+                <el-steps :active="rukuStep" finish-status="success">
+                    <el-step title="匹配库存数据"></el-step>
+                    <el-step :title="rukuForm._action === 'edit' ? '更新&关联专家': '新增专家'"></el-step>
+                    <el-step title="确定"></el-step>
+                </el-steps>
+            </el-col>
+        </el-row>
+        <template v-if="rukuStep===1">
+            <span class="text-danger">下方表格是系统根据当前通话记录匹配的库内专家数据，如果确定和通话记录中的是同一个人，请更新库内专家数据，否则，请选择新增专家</span>
+            <el-table :data="match_candidates" size="mini" border stripe>
+                <el-table-column prop='id' label="ID" width="72"></el-table-column>
+                <el-table-column label="类型" width="72">
+                    <template slot-scope="scope">
+                        <span v-if="scope.row.category === 'doctor'" ><i class="fa fa-user-circle text-danger"></i> 医生</span>
+                        <span v-else><i class="fa fa-user-circle text-primary"></i> 专家</span>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="name" label="姓名"></el-table-column>
+                <el-table-column prop="phone" label="电话"></el-table-column>
+                <el-table-column label="公司/医院">
+                    <template slot-scope="scope">
+                        {{ scope.row.candidate_experiences[0].org_cn }}
+                    </template>
+                </el-table-column>
+                <el-table-column label="部门/科室">
+                    <template slot-scope="scope">
+                        {{ scope.row.candidate_experiences[0].department }}
+                    </template>
+                </el-table-column>
+                <el-table-column label="职位">
+                    <template slot-scope="scope">
+                        {{ scope.row.candidate_experiences[0].title }}
+                    </template>
+                </el-table-column>
+                <el-table-column label="操作">
+                    <template slot-scope="scope">
+                        <el-button type="primary" size="mini" @click="handleRukuEdit(scope.row)">更新&关联专家</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </template>
+        <template v-if="rukuStep===2">
+            <el-form ref="rukuForm" :model="rukuForm" size="small" label-width="80px">
+                <el-form-item label="类型" :rules="rukuFormRules.category">
+                    <span v-if="rukuForm.category === 'doctor'" ><i class="fa fa-user-circle text-danger"></i> 医生</span>
+                    <span v-else><i class="fa fa-user-circle text-primary"></i> 专家</span>
+                </el-form-item>
+                <el-row :gutter="10">
+                    <el-col :span="6">
+                        <el-form-item label="姓" prop="last_name" :rules="rukuFormRules.last_name">
+                            <el-input v-model="rukuForm.last_name" clearable></el-input>
+                             <span v-if="rukuForm.last_name + rukuForm.first_name !== rukuCall.name" class="text-primary"><i class="el-icon-warning"></i> {{ rukuCall.name }}</span>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="6">
+                        <el-form-item label="名" prop="first_name">
+                            <el-input v-model="rukuForm.first_name" clearable></el-input>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-form-item label="电话" prop="phone" :rules="rukuFormRules.phone">
+                    <el-input v-model="rukuForm.phone" clearable></el-input>
+                    <span v-if="rukuForm.phone !== rukuCall.phone" class="text-primary"><i class="el-icon-warning"></i> {{ rukuCall.phone }}</span>
+                </el-form-item>
+                <el-form-item :label="rukuForm.category === 'expert' ? '公司' : '医院'" prop="company" :rules="rukuFormRules.company">
+                    <el-input v-if="rukuForm.category === 'expert'" v-model="rukuForm.company" clearable></el-input>
+                    <el-select
+                        v-if="rukuForm.category ==='doctor'"
+                        v-model="rukuForm.hospital_id"
+                        :remote-method="load_hospitals"
+                        :loading="loading.hospital"
+                        @change="handleHospitalChange"
+                        filterable
+                        remote
+                        placeholder="搜索医院"
+                        >
+                        <el-option v-for="item in hospitals" :key="item.id" :label="item.name" :value="item.id"></el-option>
+                    </el-select>
+                    <span v-if="rukuForm.company !== rukuCall.company" class="text-primary"><i class="el-icon-warning"></i> {{ rukuCall.company }}</span>
+                </el-form-item>
+                <el-form-item :label="rukuForm.category === 'expert' ? '部门' : '科室'" prop="department" :rules="rukuFormRules.department">
+                    <el-input v-if="rukuForm.category === 'expert'" v-model="rukuForm.department" clearable></el-input>
+                    <template v-if="rukuForm.category ==='doctor'">
+                         <el-select
+                            v-model="rukuForm.hospital_department_id"
+                            :loading="loading.hospital_department"
+                            @change="handleHospitalDepartmentChange"
+                            filterable
+                            placeholder="选择科室"
+                            >
+                            <el-option v-for="item in hospital_departments" :key="item.id" :label="item.name" :value="item.id"></el-option>
+                        </el-select>
+                        <el-button v-if="rukuForm.hospital_id" @click="handleHosDep(rukuForm.hospital_id)" type="primary" icon="el-icon-plus">新增科室</el-button>
+                    </template>
+                    <span v-if="rukuForm.department !== rukuCall.department" class="text-primary"><i class="el-icon-warning"></i> {{ rukuCall.department }}</span>
+                </el-form-item>
+                <el-form-item label="职位" prop="title">
+                    <el-input v-model="rukuForm.title" clearable></el-input>
+                    <span v-if="rukuForm.title !== rukuCall.title" class="text-primary"><i class="el-icon-warning"></i> {{ rukuCall.title }}</span>
+                </el-form-item>
+                <el-form-item label="描述" prop="description">
+                    <el-input v-model="rukuForm.description" type="textarea" :rows="5" clearable></el-input>
+                </el-form-item>
+            </el-form>
+        </template>
+        <span slot="footer" class="dialog-footer-cc">
+            <div>
+                <el-button v-if="rukuStep===2" type="primary" size="mini" @click="rukuStep=1;rukuForm={};">上一步</el-button>
+            </div>
+            <div>
+                <el-button size="mini" @click="rukuFormVisible = false">取消</el-button>
+                <el-button v-if="rukuStep===1" type="primary" size="mini" @click="handleRukuNew">新增专家</el-button>
+                <el-button v-if="rukuStep===2" type="primary" size="mini" @click="handleRukuSubmit">确定</el-button>
+            </div>
+        </span>
+    </el-dialog>
+
+    <!-- 推荐form -->
+    <el-dialog title="推荐" :visible.sync="tuijianFormVisible" :close-on-click-modal="false">
+        <el-form ref="tuijianForm" :model="tuijianForm" size="small" label-width="80px">
+            <el-form-item label="专家卡片">
+                <el-select v-model="tuijianForm.card_template_id" @change="handleCardTemplateChange" placeholder="请选择">
+                    <el-option-group
+                        v-for="group in card_templates" v-if="group.data.length"
+                        :key="group.group" :label="group.group">
+                        <el-option v-for="item in group.data" :key="item.id" :label="item.name" :value="item.id"></el-option>
+                    </el-option-group>
+                  </el-select>
+            </el-form-item>
+            <el-form-item label="推荐描述" prop="rec_description" :rules="tuijianFormRules.rec_description">
+                <el-input v-model="tuijianForm.rec_description" type="textarea" :rows="15" clearable></el-input>
+            </el-form-item>
+            <el-form-item label="反馈" prop="memo">
+                <el-input v-model="tuijianForm.memo" clearable></el-input>
+            </el-form-item>
+        </el-form>
+          
+        <span slot="footer">
+            <el-button size="mini" @click="tuijianFormVisible = false">取消</el-button>
+            <el-button type="primary" size="mini" @click="handleTuijianSubmit">确定</el-button>
+        </span>
+    </el-dialog>
+
+    <!-- 新建科室form -->
+    <el-dialog title="新增科室" :visible.sync="hosDepFormVisible" :close-on-click-modal="false">
+        <el-form ref="hosDepForm" :model="hosDepForm" size="small" label-width="80px">
+            <el-form-item label="名称" prop="name" :rules="hosDepFormRules.name">
+                <el-input v-model="hosDepForm.name" clearable></el-input>
+            </el-form-item>
+        </el-form>
+        <span slot="footer">
+            <el-button size="mini" @click="hosDepFormVisible = false">取消</el-button>
+            <el-button type="primary" size="mini" @click="handleHosDepSubmit">确定</el-button>
+        </span>
+    </el-dialog>
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            activeTab: '',
+            project_requirement_index: [],
+            project_requirement: {},
+            project_requirements: [],
+            sortableInstance: null,
+            isAdmin: <%= current_user.is_role?('admin') ? 'true' : 'false' %>,
+            editingDemandNumber: null,
+            tempDemandNumber: 0,
+            search_form: {
+                page: 1,
+                per_page: 10,
+                total: 0,
+                _k: 'name',
+                _v: '',
+                ordering: 'desc'
+            },
+            match_candidates: [],  // 入库时匹配的专家信息
+            hospitals: [],  // 医院options
+            hospital_departments: [],  // 医院部门options
+            card_templates: [],
+            loading: { hospital: false, hospital_department: false },  // loading动画开关
+            callForm: {
+                project_requirement_id: '',
+                id: '',
+            },
+            callFormRules: {
+                category: [{ required: true, message: '类型不能为空'},],
+                name: [{ required: true, message: '姓名不能为空'},],
+                status: [{ required: true, message: '通话状态不能为空'},]
+            },
+            callFormVisible: false,
+            callBatchForm: {
+                project_requirement_id: '',
+            },
+            callBatchFormVisible: false,
+            callBatchStep: 1,
+            rukuCall: {},
+            rukuForm: {},
+            rukuFormRules: {
+                last_name: [{ required: true, message: '姓名不能为空'},],
+                phone: [{ required: true, message: '电话不能为空'},],
+                company: [{ required: true, message: '公司/医院不能为空'},],
+                department: [{ required: true, message: '部门/科室不能为空'},],
+            },
+            rukuFormVisible: false,
+            rukuStep: 1,
+            tuijianForm: {},
+            tuijianFormRules: {
+                rec_description: [{ required: true, message: '推荐描述不能为空'},],
+            },
+            tuijianFormVisible: false,
+            hosDepForm: {},
+            hosDepFormRules: {
+                name: [{ required: true, message: '名称不能为空'},],
+            },
+            hosDepFormVisible: false,
+            drawer: { title: '', content: '',  visible: false },
+            call_status_dict: <%= CallRecord::STATUS.to_json.html_safe %>,
+            call_status_tag_type: { pending: 'info', missed: 'warning', rejected: 'warning', shutdown: 'warning', talking: 'warning',declined: 'danger', accepted: 'success' },
+            call_rec_status_dict: <%= CallRecord::REC_STATUS.to_json.html_safe %>,
+            call_rec_status_tag_type: { init: 'info', recommended: 'primary', hold: 'warning', unsuited: 'danger', ok: 'success', succ: 'success', fail: 'danger' },
+            req_status_dict: <%= ProjectRequirement::STATUS.to_json.html_safe %>,
+        },
+        mounted: function(){
+            this.$nextTick(function(){
+                console.log('mounted')
+                this.load_project_requirement_index()
+                this.initTabsDrag()
+                setInterval(() => {
+                    this.load_project_requirement_index()
+                }, 15000)
+                setInterval(() => {
+                    this.load_project_requirement()
+                }, 6000)
+            }) 
+        },
+        methods: {
+            load_project_requirement_index () {
+                let _this_ = this;
+                let params = { ordering: this.search_form.ordering }
+                if (this.search_form._k && this.search_form._v) {
+                    params[this.search_form._k] = this.search_form._v
+                }
+                $.get('/projects/v_pa_dashboard_data', params, function (res) {
+                    _this_.project_requirement_index = res.data.project_requirements
+                    if (!_this_.activeTab || !_this_.activeTab.startsWith('req_') ) {
+                        if (_this_.project_requirement_index[0]?.id) {
+                            _this_.activeTab = `req_${_this_.project_requirement_index[0]?.id}`
+                        }
+                    }
+                    if (_this_.project_requirement_index.length && !_this_.project_requirement.id) {
+                        _this_.load_project_requirement()
+                    }
+                    // 重新初始化拖拽功能
+                    _this_.$nextTick(() => {
+                        _this_.initTabsDrag()
+                    })
+                })
+            },
+            startEditDemandNumber(row) {
+                if (!this.isAdmin) return;
+                this.editingDemandNumber = row.id;
+                this.tempDemandNumber = row.demand_number || 1;
+            },
+            cancelEditDemandNumber() {
+                this.editingDemandNumber = null;
+                this.tempDemandNumber = 0;
+            },
+            saveDemandNumber(row) {
+                if (!this.isAdmin || this.tempDemandNumber < 1) {
+                    this.cancelEditDemandNumber();
+                    return;
+                }
+                let _this_ = this;
+                $.post('/project_requirements/v_update_demand_number', {
+                    id: row.id,
+                    demand_number: this.tempDemandNumber
+                }, function(res) {
+                    if (res.status === 0) {
+                        row.demand_number = _this_.tempDemandNumber;
+                        _this_.$message.success('需求人数更新成功');
+                    } else {
+                        _this_.$message.error(res.msg || '更新失败');
+                    }
+                    _this_.cancelEditDemandNumber();
+                }).fail(function() {
+                    _this_.$message.error('网络错误，更新失败');
+                    _this_.cancelEditDemandNumber();
+                });
+            },
+            load_project_requirement () {
+                let _this_ = this;
+                let id = this.activeTab.split('_')[1]
+                if (id && id != 'undefined') {
+                    console.log(`(re)load_project_requirement(${id})`)
+                    $.get('/project_requirements/v_show', { id: id }, function(res) {
+                        _this_.project_requirement = res.data.project_requirement
+                    })
+                }
+             },
+            load_match_candidates (call_record) {
+                let _this_ = this;
+                this.match_candidates = []
+                $.get('/call_records/v_match_candidates', { id: call_record.id }, function (res) {
+                    if (res.status === 0) {
+                        _this_.match_candidates = res.data.candidates
+                    } else if (res.status === 1) {
+                        _this_.$message({ message: res.msg, type: 'error' })
+                    }
+                })
+            },
+            load_hospitals (query) {
+                let _this_ = this;
+                this.loading.hospital = true
+                $.get('/hospitals/hospital_options', { name: query }, function (res) {
+                    _this_.hospitals = res
+                    _this_.loading.hospital = false
+                })
+            },
+            load_hospital_departments (hospital_id) {
+                let _this_ = this;
+                this.loading.hospital_department = true
+                $.get(`/hospitals/${hospital_id}/load_departments`, function (res) {
+                    _this_.hospital_departments = res
+                    _this_.loading.hospital_department = false
+                })
+            },
+            load_card_templates () {
+                let _this_ = this;
+                $.get('/card_templates/v_group_index', function (res) {
+                    _this_.card_templates = res.data.card_templates
+                })
+            },
+            sync_call_record(call_record, update_attrs=[]) {
+                if (update_attrs.length) {
+                    let cur_call_record = this.project_requirement.call_records.find(c => c.id == call_record.id)
+                    update_attrs.map(attr => cur_call_record[attr] = call_record[attr]) // 更新指定字段
+                } else {
+                    let index = this.project_requirement.call_records.findIndex(c => c.id === call_record.id)
+                    if (index !== -1) { this.project_requirement.call_records.splice(index, 1, call_record) }// 更新通话记录实例
+                }
+             },
+            update_call_status (status, call_record) {
+                let _this_ = this;
+                call_record.status = status
+                $.post('/call_records/v_update', { id: call_record.id, status: status }, function (res) {
+                    // _this_.sync_call_record(res.data.call_record, ['status'])
+                })
+            },
+            handleSearch () {
+                this.load_project_requirement_index()
+            },
+            handleSearchReset () {
+                this.search_form._k = 'name'
+                this.search_form._v = ''
+                this.load_project_requirement_index()
+            },
+            handleHospitalChange (value) {
+                let selected_hospital = this.hospitals.find(h => h.id === value)
+                this.rukuForm.company = selected_hospital.name
+                this.rukuForm.hospital_department_id = ''
+                this.rukuForm.department = ''
+                this.load_hospital_departments(value)
+            },
+            handleHospitalDepartmentChange (value) {
+                let selected_dep = this.hospital_departments.find(d => d.id === value)
+                this.rukuForm.department = selected_dep.name
+            },
+            handleCardTemplateChange (value) {
+                let _this_ = this;
+                $.get('/card_templates/v_apply', { id: value, candidate_id: this.tuijianForm.candidate_id }, function (res) {
+                    _this_.tuijianForm.rec_description = res.data.content
+                })
+            },
+            show_drawer (project_requirement) {
+                this.drawer = { title: project_requirement.title, content: project_requirement.content, files: project_requirement.files, visible: true }
+             },
+            handleCallNew (project_requirement_id) {
+                this.callFormVisible = true
+                if ((this.callForm.project_requirement_id !== project_requirement_id) || this.callForm.id ) {
+                    this.callForm = { project_requirement_id: project_requirement_id, name: '', phone: '', 
+                                      company: '', department: '', title: '', memo: '', category: 'expert', status: 'pending' }
+                }
+             },
+            handleCallEdit (call_record) {
+                this.callFormVisible = true
+                this.callForm = call_record
+                this.callForm.memo = ''
+            },
+            handleCallSubmit () {
+                let _this_ = this;
+                let params = {}
+                // 复制callForm的所有字段
+                for (let key in this.callForm) {
+                    params[key] = this.callForm[key]
+                }
+                if (params.id) {
+                    // 更新操作时，发送当前的memo_logs数据
+                    if (this.callForm.memo_logs) {
+                        params.memo_logs = JSON.stringify(this.callForm.memo_logs)
+                    }
+                    // 只有用户主动输入memo时才发送memo字段
+                    if (this.callForm.memo && this.callForm.memo.trim()) {
+                        params.memo = this.callForm.memo.trim()
+                    } else {
+                        delete params.memo
+                    }
+                    $.ajax({
+                        type: 'POST',
+                        url: '/call_records/v_update',
+                        data: params,
+                        success: function(res) {
+                            if (res.status === 0){
+                                _this_.sync_call_record(res.data.call_record)
+                                _this_.callFormVisible = false;
+                                _this_.callForm = {}
+                                _this_.$message({ message: '提交成功', type: 'success' })
+                            }   else if (res.status === 1) {
+                                _this_.$message({ message: res.msg, type: 'error' })
+                            }
+                        }
+                     })
+                } else {
+                    $.ajax({
+                        type: 'POST',
+                        url: '/call_records/v_create',
+                        data: params,
+                        success: function(res) {
+                            if (res.status === 0){
+                                // let req = _this_.project_requirements.find(req => req.id === _this_.callForm.project_requirement_id)
+                                // req.call_records.unshift(res.data.call_record)
+                                _this_.project_requirement.call_records.unshift(res.data.call_record) // 添加新增的通话记录实例到前面
+                                _this_.callFormVisible = false;
+                                _this_.callForm = {}
+                                _this_.$message({ message: '提交成功', type: 'success' })
+                            }   else if (res.status === 1) {
+                                _this_.$message({ message: res.msg, type: 'error' })
+                            }
+                        }
+                     })
+                }
+             },
+            deleteMemoLog (index) {
+                 this.$confirm('确定要删除这条沟通记录吗？', '提示', {
+                     confirmButtonText: '确定',
+                     cancelButtonText: '取消',
+                     type: 'warning'
+                 }).then(() => {
+                     let _this_ = this;
+                     
+                     // 删除memo_logs中的指定项
+                     this.callForm.memo_logs.splice(index, 1);
+                     
+                     // 删除后将memo字段设为空，避免重复汇总
+                     this.callForm.memo = '';
+                     
+                     // 立即保存到数据库
+                     let params = {
+                         id: this.callForm.id,
+                         memo_logs: JSON.stringify(this.callForm.memo_logs)
+                     };
+                     
+                     $.ajax({
+                         type: 'POST',
+                         url: '/call_records/v_update',
+                         data: params,
+                         success: function(res) {
+                             if (res.status === 0) {
+                                 _this_.sync_call_record(res.data.call_record);
+                                 _this_.$message({
+                                     type: 'success',
+                                     message: '删除成功!'
+                                 });
+                             } else {
+                                 _this_.$message({
+                                     type: 'error',
+                                     message: res.msg || '删除失败'
+                                 });
+                             }
+                         },
+                         error: function() {
+                             _this_.$message({
+                                 type: 'error',
+                                 message: '网络错误，删除失败'
+                             });
+                         }
+                     });
+                 }).catch(() => {
+                     this.$message({
+                         type: 'info',
+                         message: '已取消删除'
+                     });
+                 });
+             },
+            handleCallBatchNew (project_requirement_id) {
+                this.callBatchFormVisible = true
+                this.callBatchStep = 1
+                this.callBatchForm = { project_requirement_id: project_requirement_id, raw: '', category: '', call_records: [] }
+             },
+            handleCallBatchReset () {
+                this.callBatchStep = 1
+                this.callBatchForm.category = ''
+                this.callBatchForm.raw = ''
+                this.callBatchForm.call_records = []
+            },
+            handleCallBatchPreview () {
+                this.callBatchForm.raw.split("\n").map(l => {
+                    if (l && l.trim()) {
+                        let row = l.split("\t")
+                        this.callBatchForm.call_records.push({
+                            name: row[0], phone: row[1], company: row[2], department: row[3], title: row[4], memo: row[5]
+                        })
+                    }
+                })
+                this.callBatchForm.category = 'expert'
+                this.callBatchStep = 2
+            },
+            handleCallBatchSubmit () {
+                try {
+                    let _this_ = this;
+                    let params = { project_requirement_id: this.callBatchForm.project_requirement_id, call_records: [] }
+                    this.callBatchForm.call_records.map(c => {
+                        if (!c.name) {
+                            throw new Error('姓名不能为空')
+                        }
+                        params.call_records.push({
+                            category: this.callBatchForm.category,
+                            name: c.name, phone: c.phone, company: c.company, department: c.department, title: c.title, memo: c.memo
+                        })
+                    })
+                    $.ajax({
+                        type: 'POST',
+                        url: '/call_records/v_create_batch',
+                        data: params,
+                        success: function(res) {
+                            if (res.status === 0){
+                                // let req = _this_.project_requirements.find(req => req.id === _this_.callBatchForm.project_requirement_id)
+                                res.data.call_records.map(call_record => {
+                                    _this_.project_requirement.call_records.unshift(call_record) // 添加新增的通话记录实例到前面
+                                })
+                                _this_.callBatchFormVisible = false;
+                                _this_.$message({ message: '提交成功', type: 'success' })
+                            }   else if (res.status === 1) {
+                                _this_.$message({ message: res.msg, type: 'error' })
+                            }
+                        }
+                     })
+                } catch (err) {
+                    this.$message({ message: err, type: 'error' })
+                }
+             },
+            handleCallExport () {
+                let header = ['姓名', '公司/医院', '部门/科室', '职位', '反馈'];
+                let order = ['name', 'company', 'department', 'title', 'memo'];
+                let dataList = [];
+                this.project_requirement.call_records.forEach(item => {
+                  let dataUnit = order.map(key => item[key]);
+                  dataList.push(dataUnit);
+                })
+                let filename = `通话记录_${this.project_requirement.project_id}_${this.project_requirement.id}`
+                exportDataAsExcel(header, dataList, filename)
+            },
+            handleRuku (call_record) {
+                this.load_match_candidates(call_record)
+                this.rukuCall = call_record
+                this.rukuForm = {}
+                this.rukuFormVisible = true
+                this.rukuStep = 1
+            },
+            handleRukuNew () {
+                this.rukuStep = 2
+                let _form = { _action: 'new' }
+                let attrs = ['category', 'phone', 'company', 'department', 'title']
+                attrs.map(k => _form[k] = this.rukuCall[k])
+                _form['last_name'] = this.rukuCall['name'][0] || ''
+                _form['first_name'] = this.rukuCall['name'][1] || ''
+                _form['call_record_id'] = this.rukuCall['id']
+                _form['hospital_id'] = ''
+                _form['hospital_department_id'] = ''
+                this.rukuForm = _form
+                if (this.rukuForm.category == 'doctor') {
+                    this.rukuForm.company = ''
+                    this.rukuForm.department = ''
+                }
+             },
+            handleRukuEdit (candidate) {
+                this.rukuStep = 2
+                let _form = { _action: 'edit' }
+                let attrs = ['category', 'last_name', 'first_name', 'phone', 'description']
+                let exp = candidate.candidate_experiences[0]
+                attrs.map(k => _form[k] = candidate[k])
+                _form['company'] = exp.org_cn
+                _form['department'] = exp.department
+                _form['title'] = exp.title
+                _form['call_record_id'] = this.rukuCall['id']
+                _form['candidate_id'] = candidate.id
+                _form['hospital_id'] = exp.org_id
+                _form['hospital_department_id'] = exp.dep_id
+                this.rukuForm = _form
+                if (this.rukuForm.category == 'doctor') {
+                    this.load_hospitals(this.rukuForm.company)
+                    this.load_hospital_departments(this.rukuForm.hospital_id)
+                }
+             },
+            handleRukuSubmit () {
+                let _this_ = this;
+                $.ajax({
+                    type: 'POST',
+                    url: '/call_records/v_ruku',
+                    data: this.rukuForm,
+                    success: function(res) {
+                        if (res.status === 0){
+                            _this_.sync_call_record(res.data.call_record)
+                            _this_.rukuFormVisible = false;
+                            _this_.$message({ message: '提交成功', type: 'success' })
+                        }   else if (res.status === 1) {
+                            _this_.$message({ message: res.msg, type: 'error' })
+                        }
+                }})
+            },
+            handleTuijian (call_record) {
+                this.tuijianFormVisible = true
+                this.load_card_templates()
+                if (this.tuijianForm.call_record_id != call_record.id ) {
+                    this.tuijianForm = { call_record_id: call_record.id, candidate_id: call_record.candidate_id, card_template_id: '', rec_description: '', memo: call_record.memo }
+                }
+             },
+            handleTuijianSubmit () {
+                let _this_ = this;
+                let data = { id: this.tuijianForm.call_record_id, rec_description: this.tuijianForm.rec_description, memo: this.tuijianForm.memo }
+                $.post('/call_records/v_tuijian', data, function (res) {
+                    if (res.status === 0){
+                        _this_.sync_call_record(res.data.call_record)
+                        _this_.tuijianFormVisible = false;
+                        _this_.tuijianForm = {}
+                        _this_.$message({ message: '提交成功', type: 'success' })
+                    }   else if (res.status === 1) {
+                        _this_.$message({ message: res.msg, type: 'error' })
+                    }
+                })
+            },
+            handleHosDep (hospital_id) {
+                this.hosDepForm = { id: hospital_id, name: '' }
+                this.hosDepFormVisible = true
+            },
+            handleHosDepSubmit () {
+                console.log('handleHosDepSubmit:', this.hosDepForm)
+                let _this_ = this;
+                $.post('/hospitals/v_create_department', this.hosDepForm, function (res) {
+                    if (res.status === 0) {
+                        _this_.load_hospital_departments(_this_.hosDepForm.id)
+                        _this_.hosDepFormVisible = false;
+                        _this_.$message({ message: '提交成功', type: 'success' })
+                    } else if (res.status === 1) {
+                        _this_.$message({ message: res.msg, type: 'error' })
+                    }
+                    
+                })
+            },
+            handleInterview (call_record) {
+                let new_url = `/projects/${call_record.project_id}/add_project_task?call_record_id=${call_record.id}&expert_id=${call_record.candidate_id}`
+                let edit_url = `/project_tasks/${call_record.project_task_id}/edit`
+                window.open(call_record.project_task_id ? edit_url : new_url, '_blank')
+            },
+            handleInterviewRes(call_record, rec_status) {
+                let _this_ = this;
+                $.post('/call_records/v_update', { id: call_record.id, rec_status: rec_status }, function (res) {
+                    _this_.sync_call_record(res.data.call_record)
+                })
+            },
+            initTabsDrag() {
+                let _this_ = this;
+                this.$nextTick(() => {
+                    // 销毁之前的Sortable实例
+                    if (this.sortableInstance) {
+                        this.sortableInstance.destroy();
+                    }
+                    
+                    const tabsHeader = document.querySelector('.el-tabs__nav');
+                    if (tabsHeader && typeof Sortable !== 'undefined') {
+                        this.sortableInstance = Sortable.create(tabsHeader, {
+                            animation: 150,
+                            ghostClass: 'sortable-ghost',
+                            chosenClass: 'sortable-chosen',
+                            dragClass: 'sortable-drag',
+                            onEnd: function(evt) {
+                                _this_.handleTabDragEnd(evt);
+                            }
+                        });
+                    }
+                });
+            },
+            handleTabDragEnd(evt) {
+                const oldIndex = evt.oldIndex;
+                const newIndex = evt.newIndex;
+                
+                if (oldIndex !== newIndex && 
+                    oldIndex >= 0 && oldIndex < this.project_requirement_index.length &&
+                    newIndex >= 0 && newIndex < this.project_requirement_index.length) {
+                    // 获取当前选中的标签页ID
+                    const currentActiveId = this.activeTab.replace('req_', '');
+                    
+                    // 重新排列数组
+                    const movedItem = this.project_requirement_index.splice(oldIndex, 1)[0];
+                    if (movedItem) {
+                        this.project_requirement_index.splice(newIndex, 0, movedItem);
+                        
+                        // 强制重新渲染标签页，确保选中状态和横线效果正确
+                        this.$nextTick(() => {
+                            // 重新设置activeTab以触发重新渲染
+                            const tempTab = this.activeTab;
+                            this.activeTab = '';
+                            this.$nextTick(() => {
+                                this.activeTab = tempTab;
+                                // 强制刷新el-tabs组件的内部状态
+                                this.$nextTick(() => {
+                                    if (this.$refs.dragTabs && this.$refs.dragTabs.$forceUpdate) {
+                                        this.$refs.dragTabs.$forceUpdate();
+                                    }
+                                    // 手动触发tab-click事件确保横线位置正确
+                                    this.load_project_requirement();
+                                });
+                            });
+                        });
+                        
+                        // 可以在这里添加保存排序到后端的逻辑
+                        this.saveTabOrder();
+                    }
+                }
+             },
+            saveTabOrder() {
+                // 这里可以添加保存排序到后端的逻辑
+                const orderData = this.project_requirement_index
+                    .filter(item => item && item.id) // 过滤掉无效的数据项
+                    .map((item, index) => ({
+                        id: item.id,
+                        order: index
+                    }));
+                console.log('保存标签页排序:', orderData);
+                // 示例：发送到后端保存
+                // $.post('/projects/save_tab_order', { order_data: orderData }, function(res) {
+                //     console.log('排序保存成功');
+                // });
+            }
+        }
+    })
+</script>
+
+<style>
+    .el-radio-group label {
+        margin-bottom: 0;
+    }
+    .el-tabs__item {
+        line-height: 24px;
+        padding: 0 20px !important;
+        height: 100%;
+        background-color: white;
+        border: 1px solid #eaeaea;
+        border-radius: 10px;
+    }
+    
+    /* 取消选中状态的横线效果 */
+    .el-tabs__item.is-active {
+        border-bottom: none !important;
+    }
+    
+    .el-tabs__nav-wrap::after {
+        display: none !important;
+    }
+    
+    .el-tabs__active-bar {
+        display: none !important;
+    }
+    .card-header-cc {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .dialog-footer-cc {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .el-card__header { padding: 9px 12px; }
+    .el-card__body { padding: 12px; }
+    .drawer-content {
+        padding: 0 20px;
+        font-size: 0.9rem;
+        white-space: pre-line;
+        margin-bottom: 1rem;
+    }
+    .drawer-files {
+        padding: 0 20px;
+        font-size: 0.8rem;
+    }
+    
+    /* 拖拽样式 */
+    .sortable-ghost {
+        opacity: 0.4;
+        background: #f0f9ff;
+        border: 2px dashed #409eff;
+        transform: rotate(5deg);
+    }
+    
+    .sortable-chosen {
+        background: #e6f7ff;
+        border: 1px solid #409eff;
+    }
+    
+    .sortable-drag {
+        opacity: 0.8;
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transform: rotate(3deg);
+    }
+    
+    .el-tabs__item {
+        cursor: move;
+        transition: all 0.3s ease;
+        user-select: none;
+    }
+    
+    .el-tabs__item:hover {
+        background-color: #f5f7fa;
+        transform: translateY(-1px);
+    }
+    
+    .el-tabs__nav {
+        position: relative;
+    }
+    
+    /* 拖拽提示 */
+    .el-tabs__header::before {
+        content: '💡 提示：可以拖拽标签页来调整顺序';
+        position: absolute;
+        top: -25px;
+        left: 0;
+        font-size: 12px;
+        color: #909399;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .el-tabs__header:hover::before {
+        opacity: 1;
+    }
+    
+    /* 固定滚动条样式 */
+    .fixed-scroll-table {
+        max-height: calc(100vh - 300px);
+        overflow-y: auto;
+        position: sticky;
+        bottom: 0;
+    }
+    
+    .fixed-scroll-table .el-table__body-wrapper {
+        max-height: calc(100vh - 350px);
+        overflow-y: auto;
+        position: relative;
+    }
+    
+    /* 确保滚动条始终可见 */
+    .fixed-scroll-table .el-table__body-wrapper::-webkit-scrollbar {
+        width: 12px;
+        background-color: #f1f1f1;
+    }
+    
+    .fixed-scroll-table .el-table__body-wrapper::-webkit-scrollbar-thumb {
+        background-color: #c1c1c1;
+        border-radius: 6px;
+    }
+    
+    .fixed-scroll-table .el-table__body-wrapper::-webkit-scrollbar-thumb:hover {
+        background-color: #a8a8a8;
+    }
+</style>
