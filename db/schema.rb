@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2025_05_13_134003) do
+ActiveRecord::Schema.define(version: 2025_08_01_055927) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -313,18 +313,6 @@ ActiveRecord::Schema.define(version: 2025_05_13_134003) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "invoice_records", force: :cascade do |t|
-    t.bigint "prepaid_client_id", null: false
-    t.decimal "amount", default: "0.0", null: false
-    t.datetime "invoice_date"
-    t.string "invoice_number"
-    t.string "file"
-    t.datetime "expected_payment_date"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
-    t.index ["prepaid_client_id"], name: "index_invoice_records_on_prepaid_client_id"
-  end
-
   create_table "kpi_infos", force: :cascade do |t|
     t.bigint "kpi_summary_id"
     t.string "name"
@@ -367,6 +355,7 @@ ActiveRecord::Schema.define(version: 2025_05_13_134003) do
 
   create_table "prepaid_clients", force: :cascade do |t|
     t.bigint "company_id", null: false
+    t.bigint "contract_id", null: false
     t.decimal "total_hours", default: "0.0", null: false
     t.decimal "invoice_amount", default: "0.0", null: false
     t.datetime "invoice_date"
@@ -375,7 +364,9 @@ ActiveRecord::Schema.define(version: 2025_05_13_134003) do
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.string "invoice_file"
+    t.decimal "advance_payment_hours", precision: 10, scale: 3, default: "0.0"
     t.index ["company_id"], name: "index_prepaid_clients_on_company_id"
+    t.index ["contract_id"], name: "index_prepaid_clients_on_contract_id"
   end
 
   create_table "project_candidates", force: :cascade do |t|
@@ -387,6 +378,28 @@ ActiveRecord::Schema.define(version: 2025_05_13_134003) do
     t.string "mark"
     t.index ["candidate_id"], name: "index_project_candidates_on_candidate_id"
     t.index ["project_id"], name: "index_project_candidates_on_project_id"
+  end
+
+  create_table "project_invoices", force: :cascade do |t|
+    t.bigint "project_id"
+    t.string "invoice_no"
+    t.datetime "payment_date"
+    t.decimal "amount", precision: 10, scale: 2
+    t.string "file"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["project_id"], name: "index_project_invoices_on_project_id"
+  end
+
+  create_table "project_marks", force: :cascade do |t|
+    t.string "mark_type"
+    t.bigint "project_id"
+    t.bigint "user_id"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["project_id"], name: "index_project_marks_on_project_id"
+    t.index ["user_id", "project_id"], name: "index_project_marks_on_user_project", unique: true
+    t.index ["user_id"], name: "index_project_marks_on_user_id"
   end
 
   create_table "project_remarks", force: :cascade do |t|
@@ -560,31 +573,8 @@ ActiveRecord::Schema.define(version: 2025_05_13_134003) do
     t.index ["user_channel_id"], name: "index_users_on_user_channel_id"
   end
 
-  create_table "yibao_expert_yearly_categories", force: :cascade do |t|
-    t.bigint "yibao_expert_id", null: false
-    t.integer "year"
-    t.string "category_type"
-    t.string "sub_category"
-    t.string "detail_category"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
-    t.index ["yibao_expert_id"], name: "index_yibao_expert_yearly_categories_on_yibao_expert_id"
-  end
-
-  create_table "yibao_experts", force: :cascade do |t|
-    t.string "name"
-    t.string "institution"
-    t.string "department"
-    t.string "position"
-    t.decimal "fee"
-    t.integer "willingness"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
-  end
-
-  add_foreign_key "invoice_records", "prepaid_clients"
   add_foreign_key "medical_insurance_infos", "candidates"
   add_foreign_key "prepaid_clients", "companies"
+  add_foreign_key "prepaid_clients", "contracts"
   add_foreign_key "project_remarks", "projects"
-  add_foreign_key "yibao_expert_yearly_categories", "yibao_experts"
 end

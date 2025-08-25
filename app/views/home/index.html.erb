@@ -3,7 +3,7 @@
 <% elsif current_user.is_role?('su', 'admin', 'finance') %>
     <%= render partial: 'home/widgets/admin_summary' %>
     <%= render partial: 'home/widgets/admin_statistics_info' %>
-<% elsif current_user.is_role?('pm') %>
+<% elsif current_user.is_role?('pm', 'pd') %>
     <%= render partial: 'home/widgets/pm_summary' %>
     <%= render partial: 'home/widgets/ongoing_tasks' %>
 <% elsif current_user.is_role?('pa') %>

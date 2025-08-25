@@ -11,9 +11,10 @@ class User < ApplicationRecord
   has_many :project_users, :class_name => 'ProjectUser'
   has_many :projects, :class_name => 'Project', :through => :project_users  # 用户参与的项目
   has_many :candidate_access_logs, :class_name => 'CandidateAccessLog'
+  has_many :project_marks, class_name: 'ProjectMark'
 
   # validations
-  validates_inclusion_of :role, :in => %w[su admin pm pa finance]
+  validates_inclusion_of :role, :in => %w[su admin pm pd pa finance]
   validates_inclusion_of :status, :in => %w[active inactive]
   validates_presence_of :name_cn
   validates_length_of :name_cn, :maximum => 8
@@ -27,11 +28,12 @@ class User < ApplicationRecord
   scope :inactive, -> { where(status: 'inactive') }
   scope :admin,    -> { where(role: 'admin') }
   scope :pm,       -> { where(role: 'pm') }
+  scope :pd,       -> { where(role: 'pd') }
   scope :pa,       -> { where(role: 'pa') }
   scope :finance,  -> { where(role: 'finance') }
 
 
-  ROLES = { :admin => '管理员', :pm => '项目经理', :pa => '项目助理', :finance => '财务' }.stringify_keys
+  ROLES = { :admin => '管理员', :pm => '项目经理', :pd => '项目总监', :pa => '项目助理', :finance => '财务' }.stringify_keys
   STATUS = { :active => '激活', :inactive => '未激活' }.stringify_keys
 
   def to_api
@@ -46,6 +48,10 @@ class User < ApplicationRecord
     %w[su admin].include? role
   end
 
+  def pd?
+    role == 'pd'
+  end
+
   def finance?
     role == 'finance'
   end
@@ -55,7 +61,7 @@ class User < ApplicationRecord
   end
 
   def is_available_role?
-    %w[pm pa finance].include?(role)  # admin role is unique
+    %w[pm pd pa finance].include?(role)  # admin role is unique
   end
 
   # 是否能访问候选人数据

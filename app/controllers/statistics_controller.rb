@@ -69,8 +69,8 @@ class StatisticsController < ApplicationController
 
     s_month = (params[:month].to_time rescue nil) || current_month  # 统计月份
     result = []
-    if current_user.admin? || current_user.finance?
-      users = User.where(role: %w[admin pm pa])  # 所有用户(包括未激活) + 角色admin/pm/pa
+    if current_user.admin? || current_user.finance? || current_user.pd?
+      users = User.active.where(role: %w[admin pm pd pa])  # 激活中用户 + 角色admin/pm/pa
     else
       users = User.where(id: current_user.id)
     end
@@ -79,7 +79,7 @@ class StatisticsController < ApplicationController
     project_requirements = ProjectRequirement.where.not(status: 'cancelled').where('created_at BETWEEN ? AND ?', s_month, s_month + 1.month)
     call_records = CallRecord.where('created_at BETWEEN ? AND ?', s_month, s_month + 1.month)
     users.each do |user|
-      if user.is_role?('admin', 'pm')
+      if user.is_role?('admin', 'pm', 'pd')
         interview_minutes = project_tasks.where(created_by: user.id).sum(:charge_duration)
         manage_minutes = project_tasks.where(pm_id: user.id).where.not(created_by: user.id).sum(:charge_duration)
         manage_minutes_group = project_tasks.where(pm_id: user.id).where.not(created_by: user.id).
@@ -616,7 +616,7 @@ class StatisticsController < ApplicationController
       sum_hold = 0
       sum_succ = 0
       infos = [] # 明细 { user_id: 1, username: 'xx', sum_demand: 1, sum_succ: 1, zhuanhualv: 1.0 }
-      if current_user.is_role? 'pm'
+      if current_user.is_role?('pm', 'pd')
         current_user.projects.where(status: 'ongoing').each do |project|
           sum_demand += project.project_requirements.where.not(status: 'cancelled').sum(:demand_number)
           sum_recommended += project.call_records.where(rec_status: 'recommended').count

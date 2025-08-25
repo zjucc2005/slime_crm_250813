@@ -126,7 +126,7 @@ GEM
       racc (~> 1.4)
     orm_adapter (0.5.0)
     pg (1.1.4)
-    pkg-config (1.5.6)
+    pkg-config (1.6.2)
     public_suffix (4.0.1)
     puma (3.12.2)
     racc (1.6.0)
@@ -169,6 +169,9 @@ GEM
     responders (3.0.0)
       actionpack (>= 5.0)
       railties (>= 5.0)
+    reverse_markdown (2.1.1)
+      nokogiri
+    rexml (3.4.1)
     rmagick (5.1.0)
       pkg-config (~> 1.4)
     roo (2.8.2)

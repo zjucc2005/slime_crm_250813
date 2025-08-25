@@ -44,7 +44,7 @@ class CallRecord < ApplicationRecord
   end
 
   def can_be_edited_by(user)
-    user.admin? || self.operator_id == user.id
+    (user.admin? || current_user.pd?) || self.operator_id == user.id
   end
 
   # 同步更新电话到专家/医生数据

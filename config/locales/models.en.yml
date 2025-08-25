@@ -264,6 +264,7 @@ en:
         billed: "Billed project"
         pm: "PM"
         pa: "PA"
+        pd: "PD"
         total_project_tasks: "Total tasks"
         total_duration: "Total duration"
         total_charge_duration: "Total charge duration"

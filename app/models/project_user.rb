@@ -4,7 +4,8 @@ class ProjectUser < ApplicationRecord
   CATEGORY = {
     admin: '管理员',
     pm: '项目经理',
-    pa: '项目助理'
+    pd:'项目总监',
+    pa: '项目助理',
   }.stringify_keys
 
   # Associations
@@ -24,6 +25,7 @@ class ProjectUser < ApplicationRecord
 
   # Scopes
   scope :pm, -> { where(category: 'pm') }
+  scope :pd, -> { where(category: 'pd') }
   scope :pa, -> { where(category: 'pa') }
 
 end

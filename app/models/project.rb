@@ -22,6 +22,7 @@ class Project < ApplicationRecord
   has_many :project_task_costs, through: :project_tasks, source: :costs
   has_many :call_records, class_name: 'CallRecord'
   has_many :project_remarks, dependent: :destroy
+  has_many :project_marks, class_name: 'ProjectMark'
 
   # Validations
   validates_presence_of :name
@@ -58,7 +59,7 @@ class Project < ApplicationRecord
   def pm_users
     User.joins(:project_users).where(
         'project_users.project_id': self.id,
-        'project_users.category': %w[admin pm])
+        'project_users.category': %w[admin pm pd])
   end
 
   def pa_users
@@ -108,14 +109,14 @@ class Project < ApplicationRecord
     if self.created_by == user.id
       operator.admin?                   # 创建者PM只能被ADMIN移除
     else
-      operator.is_role?('su', 'admin', 'pm')  # PM/PA可以被ADMIN/PM移除
+      operator.is_role?('su', 'admin', 'pm', 'pd')  # PM/PA可以被ADMIN/PM移除
     end
   end
 
   def can_be_operated_by(user)
     return true if user.su?
     if self.user_channel_id == user.user_channel_id
-      if user.admin?
+      if user.admin? || user.pd?
         true
       elsif user.role == 'finance'
         true
@@ -186,8 +187,8 @@ class Project < ApplicationRecord
     end
   end
 
-  def to_api_dashboard
-    expose_fields(:id, :name, :code, :status,
+  def to_api(user)
+    expose_fields(:id, :name, :code, :status, :creator, :total_project_tasks,
       created_at: created_at.strftime('%F %T'),
       updated_at: updated_at.strftime('%F %T'),
       company_name_abbr: company&.name_abbr,
@@ -197,6 +198,7 @@ class Project < ApplicationRecord
       total_price: total_price,
       premium_rate: premium_charge_duration_rate.round(3),
       project_requirements: project_requirements.order(priority: :desc, created_at: :desc).map(&:to_api),
+      mark_type: project_marks.where(project_id: self.id, user_id: user.id).first&.mark_type
     )
   end
 

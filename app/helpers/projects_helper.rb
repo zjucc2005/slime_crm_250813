@@ -3,7 +3,7 @@ module ProjectsHelper
   def project_options(mode=:default)
     query = case mode
               when :all then Project.all
-              else current_user.admin? ? Project.all : current_user.projects
+              else (current_user.admin? || current_user.pd?) ? Project.all : current_user.projects
             end
     query = user_channel_filter(query)
     query.where(status: %w[initialized ongoing]).order(:updated_at => :desc).map{|p| [p.project_option_friendly, p.id]}

@@ -121,7 +121,7 @@ Rails.application.routes.draw do
     post :billing, on: :member
     post :billed, on: :member
 
-    get :batch_update_status, on: :collection
+    post :batch_update_status, on: :collection
 
     get :experts,       on: :member
     get :project_tasks, on: :member
@@ -137,11 +137,15 @@ Rails.application.routes.draw do
 
     get :v_pm_dashboard, on: :collection
     get :v_pm_dashboard_data, on: :collection
-    
+    get :page_projects, on: :collection
+
     get :v_pa_dashboard, on: :collection
     get :v_pa_dashboard_data, on: :collection
 
     patch :update_finance, on: :member  # 更新项目财务信息
+
+    post 'project_marks', to: 'projects#create_project_mark', on: :collection
+    delete 'project_marks/:project_id', to: 'projects#cancel_project_mark', on: :collection
 
   end
 

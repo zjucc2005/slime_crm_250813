@@ -5,40 +5,6 @@ class ProjectsController < ApplicationController
   load_and_authorize_resource
   before_action :authenticate_user!
 
-  # GET /projects
-  def index
-    # query = current_user.is_role?('admin') ? Project.all : current_user.projects
-    query = params[:my_project] == 'true' ? current_user.projects : Project.all
-    query = user_channel_filter(query)
-    query = query.where('projects.created_at >= ?', params[:created_at_ge]) if params[:created_at_ge].present?
-    query = query.where('projects.created_at <= ?', params[:created_at_le]) if params[:created_at_le].present?
-    %w[name code].each do |field|
-      query = query.where("projects.#{field} ILIKE ?", "%#{params[field].strip}%") if params[field].present?
-    end
-    %w[id status user_channel_id].each do |field|
-      query = query.where("projects.#{field}" => params[field]) if params[field].present?
-    end
-    if params[:company].present?
-      query = query.joins(:company).where('companies.name ILIKE :company OR companies.name_abbr ILIKE :company', { company: "%#{params[:company].strip}%" })
-    end
-    if params[:client_name].present?
-      query = query.joins(:candidates).where('candidates.category': 'client').where('candidates.name ILIKE ?', "%#{params[:client_name].strip}%").distinct
-    end
-    if params[:client_id].present?
-      query = query.joins(:project_candidates).where('project_candidates.category': 'client', 'project_candidates.candidate_id': params[:client_id]).distinct
-    end
-
-    # export excel files
-    case params[:commit]
-    when 'Weekly update' then export_projects(query.order(created_at: :desc), category='weekly_update') and return
-    when I18n.t(:standard_template) then export_projects(query.order(created_at: :desc), category='standard') and return
-    when '项目总费用统计表' then export_projects(query.order(created_at: :desc), category='total_fee') and return
-    else nil
-    end
-
-    @projects = query.order(updated_at: :desc).paginate(:page => params[:page], :per_page => 20)
-  end
-
   # GET /projects/new
   def new
     @project = Project.new
@@ -73,8 +39,8 @@ class ProjectsController < ApplicationController
       if @project.valid?
         ActiveRecord::Base.transaction do
           @project.save!
-          if current_user.is_role?('pm')
-            @project.project_users.find_or_create_by!(category: 'pm', user_id: current_user.id)
+          if current_user.is_role?('pm', 'pd')
+            @project.project_users.find_or_create_by!(category: current_user.role, user_id: current_user.id)
           end
         end
         flash[:success] = t(:operation_succeeded)
@@ -179,7 +145,7 @@ class ProjectsController < ApplicationController
 
       ActiveRecord::Base.transaction do
         # add pm
-        pm_users = User.where(id: params[:uids], role: %w[admin pm])
+        pm_users = User.where(id: params[:uids], role: %w[admin pm pd])
         pa_users = User.where(id: params[:uids], role: 'pa')
         pm_users.each do |user|
           @project.project_users.find_or_create_by!(category: user.role, user_id: user.id)
@@ -439,24 +405,20 @@ class ProjectsController < ApplicationController
   # @param uids : Array
   def batch_update_status
     begin
-      if params[:status] == 'finished'
-        ActiveRecord::Base.transaction do
-          Project.where(id: params[:uids], status: 'ongoing').each do |project|
+      ActiveRecord::Base.transaction do
+        if params[:status] == 'finished'
+          Project.where(id: params[:ids], status: 'ongoing').each do |project|
             project.update(status: 'finished')
           end
-        end
-      elsif params[:status] == 'billed'
-        ActiveRecord::Base.transaction do
-          Project.where(id: params[:uids], status: ['billing', 'ongoing', 'finished']).each do |project|
-            project.update(status: 'billed', billed_at: Time.now)
+        elsif params[:status] == 'billed'
+          Project.where(id: params[:ids], status: ['billing', 'ongoing', 'finished']).each do |project|
+            project.update(status: 'billed')
           end
         end
+        render json: { status: 0 }
       end
-      flash[:success] = t(:operation_succeeded)
-      redirect_to projects_path
     rescue => e
-      flash[:error] = e.message
-      redirect_to projects_path
+      render json: { status: 1, msg: e.message }
     end
   end
 
@@ -499,7 +461,7 @@ class ProjectsController < ApplicationController
   end
 
   def work_board
-    query = current_user.admin? ? Project.all : current_user.projects
+    query = (current_user.admin? || current_user.pd?) ? Project.all : current_user.projects
     query = user_channel_filter(query)
     query = query.where('created_at >= ?', params[:created_at_ge]) if params[:created_at_ge].present?
     query = query.where('created_at <= ?', params[:created_at_le]) if params[:created_at_le].present?
@@ -538,33 +500,64 @@ class ProjectsController < ApplicationController
   # end
 
   def v_pm_dashboard_data
-    begin
-      page = Integer(params[:page]) rescue 1
-      per_page = Integer(params[:per_page]) rescue 10
-      query = current_user.admin? ? Project.all : current_user.projects
-      query = query.where(status: %w[initialized ongoing])
-      rec_count = query.joins(:call_records).where('call_records.rec_status': 'recommended').count
 
-      %w[name code].each do |field|
-        query = query.where("projects.#{field} ILIKE ?", "%#{params[field].strip}%") if params[field].present?
-      end
-      if params[:company_name_abbr].present?
-        query = query.joins(:company).where('companies.name ILIKE :company OR companies.name_abbr ILIKE :company', { company: "%#{params[:company_name_abbr].strip}%" })
-      end
-      if [true, 'true', 1, '1'].include?(params[:is_rec])
-        query = query.joins(:call_records).where('call_records.rec_status': 'recommended').distinct
-      end
-      @projects = query.order(id: :desc).paginate(page: page, per_page: per_page)
-      render json: { 
-        status: 0, 
-        data: { 
-          projects: @projects.map(&:to_api_dashboard),
-          rec_count: rec_count,
-          total: query.count, page: page, per_page: per_page
-        }
+    begin
+      # 只查询 新项目 和 进展中
+      params[:status_list] = %w[initialized ongoing]
+      query = ProjectsPageQuery.new(params, current_user)
+      results = query.results
+
+      render json: {
+        status: 0,
+        data: results
       }
     rescue => e
       render json: { status: 1, msg: e.message }
+    end
+
+  end
+
+  def page_projects
+    begin
+      query = ProjectsPageQuery.new(params, current_user)
+      results = query.results
+
+      render json: {
+        status: 0,
+        data: results
+      }
+    rescue => e
+      render json: { status: 1, msg: e.message }
+    end
+  end
+
+  def create_project_mark
+    begin
+      project_mark_param = params[:project_mark]
+      project_mark = current_user.project_marks.find_or_initialize_by(project_id: project_mark_param[:project_id])
+      project_mark.mark_type = project_mark_param[:mark_type]
+      project_mark.updated_at = Time.now
+      if project_mark.save
+        render json: {
+          status: 0,
+          data: project_mark
+        }
+      end
+    rescue Exception => e
+      puts e.backtrace.join("\n")
+      render json: { status: 1, msg: e.message }
+    end
+  end
+
+  def cancel_project_mark
+    project_mark = current_user.project_marks.find_by(project_id: params[:project_id])
+    if project_mark
+      project_mark.destroy
+      render json: {
+        status: 0
+      }
+    else
+      render json: { status: 1, msg: 'Mark not found' }
     end
   end
 
@@ -611,7 +604,7 @@ class ProjectsController < ApplicationController
   end
 
   def project_requirement_params
-    params.require(:project_requirement).permit(:title, :content, :demand_number, :file, :operator_id)
+    params.require(:project_requirement).permit(:title, :content, :demand_number, :file, :operator_id, :category)
   end
 
   # 加载客户公司

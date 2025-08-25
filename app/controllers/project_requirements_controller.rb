@@ -7,7 +7,7 @@ class ProjectRequirementsController < ApplicationController
   def index
     query = ProjectRequirement.joins(:project)
     query = user_channel_filter(query, 'projects.user_channel_id')
-    query = (current_user.admin? || current_user.finance?) ? query : query.where('project_requirements.operator_id': current_user.id)
+    query = (current_user.admin? || current_user.finance? || current_user.pd?) ? query : query.where('project_requirements.operator_id': current_user.id)
     query = query.where('created_at >= ?', params[:created_at_ge]) if params[:created_at_ge].present?
     query = query.where('created_at <= ?', params[:created_at_le]) if params[:created_at_le].present?
     %w[status project_id operator_id].each do |field|

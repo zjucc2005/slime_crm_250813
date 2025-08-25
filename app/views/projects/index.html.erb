@@ -1,69 +1,394 @@
-<div class="card p-2 mb-1 d-flex flex-row justify-content-between">
-    <div>
-        <%= link_to new_project_path, :class => 'btn btn-primary' do %>
-            <%= fa_icon_tag('plus') %> <%= "#{t('action.new_model', :model => mt(:project))}" %>
-        <% end if can? :new, Project %>
-        <%= render partial: 'projects/widgets/batch_update_status' %>
+<div id="app">
+
+    <el-card>
+        <el-form :inline="true" :model="search_form" ref="search_form" size="mini" class="search-form">
+            <el-form-item label="项目名称">
+                <el-input v-model="search_form.name" placeholder="项目名称"></el-input>
+            </el-form-item>
+            <el-form-item label="创建时间">
+                <el-date-picker
+                    v-model="search_form.created_at"
+                    type="daterange"
+                    value-format="yyyy-MM-dd"
+                    range-separator="至"
+                    start-placeholder="开始"
+                    end-placeholder="结束">
+                </el-date-picker>
+            </el-form-item>
+
+            <el-form-item label="项目编码">
+                <el-input v-model="search_form.code" placeholder="项目编码"></el-input>
+            </el-form-item>
+            <el-form-item label="状态">
+                <el-select v-model="search_form.status" placeholder="请选择">
+                    <el-option value="" label="请选择"></el-option>
+                    <el-option v-for="(val, key) in status_dict" :key="key" :label="val" :value="key"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="公司">
+                <el-input v-model="search_form.company_name_abbr" placeholder="公司名称/简称"></el-input>
+            </el-form-item>
+            <el-form-item label="客户联系人">
+                <el-input v-model="search_form.client_contact" placeholder="客户联系人"></el-input>
+            </el-form-item>
+            <el-form-item label="我的项目">
+                <el-select v-model="search_form.mine" placeholder="请选择">
+                    <el-option value="" label="请选择"></el-option>
+                    <el-option value="1" label="是"></el-option>
+                </el-select>
+            </el-form-item>
+
+            <el-button @click="handleSearch" type="primary" size="mini" icon="el-icon-search">搜索</el-button>
+            <el-button @click="handleSearchReset" size="mini" icon="el-icon-refresh" title="重置">重置</el-button>
+
+        </el-form>
+
+    </el-card>
+        
+    <div class="toolbar">
+        <% if can?(:new, Project) %>
+            <el-button @click="handleProjectNew" type="primary" size="mini"  icon="el-icon-plus">新增项目</el-button>
+            <el-button @click="batchUpdateStatus('finished')" size="mini"  type="primary" plain>批量结束</el-button>
+            <el-button @click="batchUpdateStatus('billed')" size="mini"  type="primary" plain>批量收款</el-button>
+        <% else %>
+            <div></div><!--占位dom-->
+        <% end %>
     </div>
-    <%= render :partial => 'projects/widgets/search_modal' %>
+
+    <el-card class="box-card mb-1">
+<!--        <div slot="header" class="header-cc">-->
+
+<!--        </div>-->
+
+        <!-- 进展中的项目 -->
+        <div>
+            <el-table :data="projects" size="mini"  border stripe
+                      @selection-change="handleSelectionChange">
+                <el-table-column
+                  type="selection"
+                  width="55">
+                </el-table-column>
+                <el-table-column label="" align="center" width="100">
+                    <template slot-scope="scope">
+                        <div class="mark-bar">
+                        <!-- 如果项目未被标记，显示“置顶”和“挂起”按钮 -->
+                        <template v-if="!scope.row.mark_type || scope.row.mark_type == 'top'">
+                            <el-tooltip content="置顶" placement="top">
+                                <i
+                                    class="el-icon-top action-icon top-icon"
+                                    @click="markProject(scope.row, 'top')"
+                                ></i>
+                            </el-tooltip>
+                        </template>
+                        <template v-if="!scope.row.mark_type || scope.row.mark_type == 'hold'">
+                            <el-tooltip content="挂起" placement="top">
+                                <i
+                                    class="el-icon-bottom action-icon"
+                                    @click="markProject(scope.row, 'hold')"
+                                ></i>
+                            </el-tooltip>
+                        </template>
+                        <template v-if="scope.row.mark_type">
+                                <el-link
+                                    @click="cancelMark(scope.row)"
+                                    size="mini"
+                                    @mouseenter.native="hoveredRowId = scope.row.id"
+                                    @mouseleave.native="hoveredRowId = null"
+                                >
+                                    <template v-if="scope.row.mark_type == 'top'">
+                                        {{ hoveredRowId === scope.row.id ? '取消' : '已置顶' }}
+                                    </template>
+                                    <template v-else>
+                                        {{ hoveredRowId === scope.row.id ? '取消' : '已挂起' }}
+                                    </template>
+                                </el-link>
+                        </template>
+                        </div>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="code" label="编码" width="150"></el-table-column>
+                <el-table-column prop="name" label="名称" width="150">
+                    <template slot-scope="scope">
+                        <el-link :href="`/projects/${scope.row.id}`" target="_blank" type="primary">
+                            {{ scope.row.name }}</el-link>
+                    </template>
+
+                </el-table-column>
+                <el-table-column prop="client_contact" label="客户联系人" width="100"></el-table-column>
+                <el-table-column prop="company_name_abbr" label="公司简称" width="150"></el-table-column>
+
+                <el-table-column prop="pm_name" label="PM" width="100"></el-table-column>
+                <el-table-column prop="" label="需求人数" width="100">
+                    <template slot-scope="scope">
+                        {{ scope.row.project_requirements?.reduce(
+                            (t, item) => t + (item?.demand_number || 0), 
+                            0) || 0
+                        }} 
+                    </template>
+                </el-table-column>
+                <el-table-column prop="total_project_tasks" label="任务总数" width="100"></el-table-column>
+
+                <el-table-column prop="total_charge_duration" label="总收费时长" width="100">
+                    <template slot-scope="scope">
+                        {{ scope.row.total_charge_duration }} 小时
+                    </template>
+                </el-table-column>
+                </el-table-column>
+                <el-table-column prop="premium_rate" label="Premium Rate" width="110">
+                    <template slot-scope="scope">
+                        {{ scope.row.premium_rate * 100 }} %
+                    </template>
+                </el-table-column>
+                 <el-table-column prop="status" label="状态" >
+                    <template slot-scope="scope">
+                        <el-tag :type="{ 'initialized': 'warning', 'ongoing': 'success', 'finished': 'info', 'billing': 'primary', 'billed': 'info'}[scope.row.status]" size="mini">
+                            {{ status_dict[scope.row.status] }}
+                        </el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="total_price" label="总费用" width="100"></el-table-column>
+                
+
+                <el-table-column prop="" label="创建者">
+                    <template slot-scope="scope">
+                        {{ scope.row.creator?.name_cn }}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="created_at" label="创建时间" width="180"></el-table-column>
+                <el-table-column prop="created_at" label="更新时间" width="180"></el-table-column>
+
+                
+            </el-table>
+
+
+    <el-pagination
+        :total="search_form.total"
+        :current-page.sync="search_form.page"
+        :page-size.sync="search_form.per_page"
+        :page-sizes="[20, 50]"
+        @current-change="handlePageChange"
+        @size-change="handlePageChange"
+        background
+        layout="total, sizes, prev, pager, next, jumper"
+        style="text-align: center;"
+        >
+    </el-pagination>
+        </div>
+
+    </el-card>
+
 </div>
 
-<% if @projects.present? %>
-    <div class="card p-2 mb-2">
-        <div class="table-responsive">
-            <table class="table table-sm table-striped nowrap card-text">
-                <thead>
-                <tr>
-                    <th><%= check_box_tag :selectAll, nil, nil, :onclick => 'selectAll(this);' %></th>
-                    <th><%= mt(:project, :id) %></th>
-                    <th></th>
-                    <th><%= mt(:project, :name) %></th>
-                    <th><%= t(:client_contact) %></th>
-                    <th><%= mt(:project, :code) %></th>
-                    <th><%= mt(:company, :name_abbr) %></th>
-                    <th><%= mt(:project_requirement, :demand_number) %></th>
-                    <th><%= mt(:project, :total_project_tasks) %></th>
-                    <th><%= mt(:project, :total_charge_duration) %></th>
-                    <th>Premium Rate</th>
-                    <th><%= mt(:project, :status) %></th>
-                    <th><%= mt(:project, :total_price) %></th>
-                    <th><%= mt(:project, :created_by) %></th>
-                    <th><%= mt(:project, :created_at) %></th>
-                    <th><%= mt(:project, :updated_at) %></th>
-                </tr>
-                </thead>
-                <tbody>
-                <% @projects.each do |project| %>
-                    <tr>
-                        <td><%= check_box_tag :'uids[]', project.id, false %></td>
-                        <td><%= content_tag :span, "# #{project.uid}", :class => 'text-gray' %></td>
-                        <td><%= content_tag :span, nil, :class => 'status valid' if project.project_users.exists?(user_id: current_user.id) %></td>
-                        <td><%= link_to project.name, project_path(project) %></td>
-                        <td><%= project.main_client.name rescue '' %></td>
-                        <td><%= project.code %></td>
-                        <td><%= project.company.name_abbr %></td>
-                        <td><%= project.project_requirements.sum(:demand_number) rescue 'ERROR' %></td>
-                        <td><%= project.total_project_tasks %></td>
-                        <td><%= project.total_charge_duration %> <%= t(:hour) %></td>
-                        <td>
-                            <%= content_tag :span, "#{(project.premium_charge_duration_rate * 100).round} %", class: project.premium_charge_duration_rate > 0.5 ? 'text-danger text-bold' : '' %>
-                        </td>
-                        <td><%= project_status_badge(project.status) %></td>
-                        <td><%= project.total_price %></td>
-                        <td><%= project.creator.name_cn rescue 'NA' %></td>
-                        <td><%= project.created_at.strftime('%F %T') %></td>
-                        <td><%= project.updated_at.strftime('%F %T') %></td>
-                    </tr>
-                <% end %>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    <%= will_paginate @projects %>
-<% else %>
-    <div class="card p-2">
-        <div class="p-4 text-center">
-            <h5 class="text-gray mb-0"><%= t(:not_found) %></h5>
-        </div>
-    </div>
-<% end %>
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            projects: [],
+            rec_count: 0, // 推荐数量
+            search_form: {
+                page: 1,
+                per_page: 20,
+                total: 0,
+                name: '',
+                created_at: [],
+                created_at_ge: '',
+                created_at_le: '',
+                code: '',
+                status: '',
+                company_name_abbr: '',
+                client_contact: '',
+                mine: '',
+            },
+            multipleSelection: [],
+            status_dict: <%= Project::STATUS.to_json.html_safe %>,
+            req_categories: <%= ProjectRequirement::CATEGORIES.to_json.html_safe %>,
+            req_status_dict: <%= ProjectRequirement::STATUS.to_json.html_safe %>,
+            req_status_tag_type: { ongoing: 'success', finished: 'info', cancelled: 'info'},
+            call_status_dict: <%= CallRecord::STATUS.to_json.html_safe %>,
+            call_status_tag_type: { pending: 'info', missed: 'warning', rejected: 'warning', shutdown: 'warning', talking: 'warning',declined: 'danger', accepted: 'success' },
+            call_rec_status_op: ['init', 'recommended', 'hold', 'unsuited', 'ok'],
+            call_rec_status_dict: <%= CallRecord::REC_STATUS.to_json.html_safe %>,
+            call_rec_status_tag_type: { init: 'info', recommended: 'primary', hold: 'warning', unsuited: 'danger', ok: 'success', succ: 'success', fail: 'danger' },
+            hoveredRowId: null,
+        },
+        mounted: function(){
+            this.$nextTick(function(){
+                this.load_projects()
+            })
+        },
+        methods: {
+            load_projects () {
+                let _this_ = this;
+                let params = this.search_form
+                if (params.created_at.length > 0){
+                    params.created_at_ge = params.created_at[0]
+                    params.created_at_le = params.created_at[1]
+                }
+                $.get('/projects/page_projects', params, function (res) {
+                    _this_.projects = res.data.projects
+                    _this_.rec_count = res.data.rec_count
+                    _this_.search_form.total = res.data.total
+                })
+            },
+            handleSearch () {
+                this.search_form.page = 1
+                this.load_projects()
+            },
+            handleSearchReset () {
+                this.search_form = {
+                    page: 1,
+                    per_page: this.search_form.per_page,
+                    name: '',
+                    created_at: [],
+                    created_at_ge: '',
+                    created_at_le: '',
+                    code: '',
+                    status: '',
+                    company_name_abbr: '',
+                    client_contact: '',
+                    mine: '',
+                }
+                this.load_projects()
+            },
+            handlePageChange () {
+                this.load_projects()
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+            },
+            handleProjectNew () {
+                window.open('/projects/new', '_blank');
+            },
+            handleSelectionChange(val) {
+                this.multipleSelection = val;
+            },
+            batchUpdateStatus (status) {
+
+                let _this = this;
+                let operationMap = {
+                    'finished': '批量结束',
+                    'billed': '批量收款'
+                }
+                let params = {
+                    ids: _this.multipleSelection.map(o=> o.id),
+                    status: status,
+                }
+
+                _this.$confirm(`确定执行 ${operationMap[status]} 吗?`, '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    $.post('/projects/batch_update_status', params, function(res) {
+                        if (res.status === 0) {
+                            _this.load_projects()
+                            _this.$message({
+                                type: 'success',
+                                message: '修改成功!'
+                            });
+                        }else {
+                            _this.$message({ message: res.msg, type: 'error' })
+                        }
+                    })
+                }).catch((e) => {
+                    console.log(e)
+                    _this.$message({
+                        type: 'info',
+                        message: '已取消'
+                    });
+                });
+            },
+            markProject(project, markType) {
+                const payload = {
+                    project_mark: {
+                        project_id: project.id,
+                        mark_type: markType,
+                    }
+                };
+                $.post('/projects/project_marks', payload)
+                    .done(() => {
+                        this.$message.success('操作成功');
+                        // 操作成功后，重新获取整个列表以保证排序正确
+                        this.load_projects();
+                    })
+                    .fail(error => {
+                        console.error(`标记项目失败 (type: ${markType}):`, error);
+                        this.$message.error('操作失败');
+                    });
+            },
+            cancelMark(project) {
+                $.post(`/projects/project_marks/${project.id}`, { _method: 'delete' })
+                    .done(() => {
+                        this.$message.success('取消成功');
+                        // 操作成功后，重新获取整个列表
+                        this.load_projects();
+                    })
+                    .fail(error => {
+                        console.error('取消标记失败:', error);
+                        this.$message.error('操作失败');
+                    });
+            },
+
+        }
+    })
+</script>
+
+<style>
+    .top-bar-cc>.el-card__body {
+        display: flex;
+        justify-content: space-between;
+    }
+    .header-cc {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+    }
+    .el-card__header { padding: 9px 12px; }
+    .el-card__body { padding: 6px 12px; }
+    .drawer-content {
+        padding: 0 20px;
+        font-size: 0.9rem;
+        white-space: pre-line;
+        margin-bottom: 1rem;
+    }
+    .drawer-files {
+        padding: 0 20px;
+        font-size: 0.8rem;
+    }
+    .rec-description-cc {
+        white-space: pre-line;
+    }
+    .cc-link {
+        font-size: 12px;
+    }
+    .el-pagination {
+        margin-top: 10px;
+    }
+    .search-form {
+        margin-top: 12px;
+    }
+    .toolbar {
+        margin: 10px 0;
+    }
+
+
+    .mark-bar{
+        line-height: 16px;
+        font-size: 18px;
+        display: flex;
+    }
+    .action-icon {
+        font-size: 18px; /* 调整图标大小 */
+        cursor: pointer;
+        margin: 0 8px 0 0; /* 增加图标间距 */
+        color: #606266; /* Element UI 默认图标颜色 */
+        transition: color 0.2s; /* 添加颜色变化的过渡效果 */
+        font-weight: bold;
+    }
+
+    .action-icon:hover {
+        color: #F56C6C; /* Element UI 的危险红色 */
+    }
+
+    .top-icon {
+        color: red;
+    }
+</style>

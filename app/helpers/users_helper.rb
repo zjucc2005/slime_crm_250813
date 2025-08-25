@@ -3,7 +3,7 @@ module UsersHelper
 
   # user role options
   def user_role_options
-    permit_roles = %w[pm pa finance]
+    permit_roles = %w[pm pa pd finance]
     User::ROLES.select{|k, v| permit_roles.include? k }.to_a.map(&:reverse)
   end
 
@@ -14,7 +14,7 @@ module UsersHelper
 
   # user role display style
   def user_role_badge(role)
-    dict = { :admin => 'danger', :pm => 'primary', :pa => 'info', :finance => 'warning' }.stringify_keys
+    dict = { :admin => 'danger', :pm => 'primary', :pd => 'primary', :pa => 'info', :finance => 'warning' }.stringify_keys
     content_tag :span, User::ROLES[role] || role, :class => "badge badge-#{dict[role] || 'dark'}"
   end
 

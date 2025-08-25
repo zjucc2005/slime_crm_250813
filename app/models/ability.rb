@@ -37,6 +37,7 @@ class Ability
       when 'su'      then su_ability
       when 'admin'   then admin_ability
       when 'pm'      then pm_ability
+      when 'pd'      then pd_ability
       when 'pa'      then pa_ability
       when 'finance' then finance_ability
       else nil
@@ -106,6 +107,33 @@ class Ability
     can :yibao, Candidate
   end
 
+  def pd_ability
+    can_edit_my_account
+    can :index, User
+    can :manage, Candidate
+    can :manage, CandidateComment
+    can :manage, CandidatePaymentInfo
+    can :manage, Doctor
+    cannot :import_haodf, Doctor
+    can :read, Company
+    can :manage, Client
+    # can [:new_client], Company
+    can :manage, Project
+    cannot [:finish, :billing, :billed, :batch_update_status], Project
+    can :manage, ProjectCandidate
+    can :manage, ProjectRequirement
+    can [:show, :edit, :update, :get_base_price, :add_cost, :remove_cost, :cancel, :edit_cost, :update_cost,
+         :v_upload_jiesuan_file, :v_remove_jiesuan_file], ProjectTask
+    cannot :manage, Finance
+    can :manage, CallRecord
+
+    can :manage, LocationDatum
+    can :manage, Hospital
+    can :manage, Bank
+    can :read, Industry
+    can [:v_group_index, :v_apply], CardTemplate
+  end
+
   def pa_ability
     can_edit_my_account
     can :index, User
@@ -118,7 +146,7 @@ class Ability
     # can [:new_client], Company
     can [:index, :show, :add_clients, :delete_client, :add_experts, :delete_expert,
          :add_project_task, :project_tasks, :experts, :work_board, :user_options, :load_project_requirements,
-         :v_pm_dashboard, :v_pm_dashboard_data, :v_pa_dashboard, :v_pa_dashboard_data], Project
+         :v_pm_dashboard, :v_pm_dashboard_data, :v_pa_dashboard, :v_pa_dashboard_data, :page_projects], Project
     can :manage, ProjectCandidate
     can :manage, ProjectRequirement
     can [:show, :edit, :update, :get_base_price, :add_cost, :remove_cost, :cancel, :edit_cost, :update_cost, 

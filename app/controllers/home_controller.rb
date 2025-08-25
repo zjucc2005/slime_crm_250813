@@ -7,7 +7,7 @@ class HomeController < ApplicationController
       load_dashboard_of_cinney
     elsif current_user.is_role?('su', 'admin', 'finance')
       load_dashboard_of_admin
-    elsif current_user.is_role?('pm')
+    elsif current_user.is_role?('pm', 'pd')
       load_dashboard_of_pm
     elsif current_user.is_role?('pa')
       load_dashboard_of_pa

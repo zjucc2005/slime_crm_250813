@@ -1,7 +1,7 @@
 module CallRecordsHelper
 
   def call_record_operator_options
-    query = User.where(role: %w[pm pa], status: 'active')
+    query = User.where(role: %w[pm pa pd], status: 'active')
     users = user_channel_filter(query).order(:created_at => :asc)
     users.map{|user| ["#{user.uid} #{user.name_cn}, #{user.email}", user.id] }
   end

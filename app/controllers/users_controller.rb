@@ -5,7 +5,7 @@ class UsersController < ApplicationController
 
   # GET /users
   def index
-    query = User.where(role: %w[admin pm pa finance])
+    query = User.where(role: %w[admin pm pa finance pd])
     query = user_channel_filter(query)
     query = query.where('created_at >= ?', params[:created_at_ge]) if params[:created_at_ge].present?
     query = query.where('created_at <= ?', params[:created_at_le]) if params[:created_at_le].present?
@@ -156,7 +156,7 @@ class UsersController < ApplicationController
 
   def v_staff_options
     begin
-      @users = user_channel_filter(User.active.where(role: %w[admin pm pa])).order(:id)
+      @users = user_channel_filter(User.active.where(role: %w[admin pm pa pd])).order(:id)
       render json: { status: 0, data: { users: @users.map{ |u| [u.uid_name, u.id] } } }
     rescue => e
       render json: { status: 1, msg: e.message }

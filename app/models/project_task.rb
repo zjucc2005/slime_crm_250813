@@ -85,7 +85,7 @@ class ProjectTask < ApplicationRecord
   end
 
   def can_be_edited_by(user)
-    status == 'ongoing' && (created_by == user.id || pm_id == user.id || user.admin? || user.email == 'cinney.wu@hci-consulting.com')
+    status == 'ongoing' && (created_by == user.id || pm_id == user.id || user.admin? || user.pd? || user.email == 'cinney.wu@hci-consulting.com')
   end
 
   # 当前执行中的合同(最新), 用于获取价格计算规则

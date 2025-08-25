@@ -308,6 +308,7 @@ zh_cn:
         billing: "开票"
         billed: "确认项目已付款"
         pm: "项目经理"
+        pd: "项目总监"
         pa: "项目助理"
         total_project_tasks: "任务总数"
         total_duration: "总时长"
