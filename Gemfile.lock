@@ -169,9 +169,6 @@ GEM
     responders (3.0.0)
       actionpack (>= 5.0)
       railties (>= 5.0)
-    reverse_markdown (2.1.1)
-      nokogiri
-    rexml (3.4.1)
     rmagick (5.1.0)
       pkg-config (~> 1.4)
     roo (2.8.2)

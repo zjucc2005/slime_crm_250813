@@ -380,17 +380,6 @@ ActiveRecord::Schema.define(version: 2025_08_01_055927) do
     t.index ["project_id"], name: "index_project_candidates_on_project_id"
   end
 
-  create_table "project_invoices", force: :cascade do |t|
-    t.bigint "project_id"
-    t.string "invoice_no"
-    t.datetime "payment_date"
-    t.decimal "amount", precision: 10, scale: 2
-    t.string "file"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
-    t.index ["project_id"], name: "index_project_invoices_on_project_id"
-  end
-
   create_table "project_marks", force: :cascade do |t|
     t.string "mark_type"
     t.bigint "project_id"
